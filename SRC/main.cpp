@@ -1,21 +1,4 @@
-#include <iostream>
-#include <string>
-#include <vector>
-#include <cmath>
-#include <ctime>
-#include <cstring>
-#include <unordered_map>
-#include <unordered_set>
-#include <random>
-#include <fstream>
-#include <algorithm>
-#include <filesystem>
-#include <optional>
-#include <type_traits>
-#include <limits>
-#include <SFML/Graphics.hpp>
-#include <SFML/Audio.hpp>
-#include "helper.hpp"
+#include "includes/all.hpp"
 
 namespace frame {
 	void start_application();
@@ -63,8 +46,8 @@ namespace frame {
 		
 		fstopwatches.start("accumulated_game_time");
 		
-		sprites.add("player", textures["player"], 0.0).resizeToFit(game).multiply(0.1).align(game, Align::BottomLeft, Align::TopRight);
-		sprites.add("sky", textures["sky"], -1.0).resizeToFit(game).align(game, Align::BottomLeft, Align::TopRight);
+		sprites.add("player", textures["player"], 0.0).resizeToFit(game).multiply(0.1).align(game.getGlobalBounds(), Align::BottomLeft, Align::TopRight);
+		sprites.add("sky", textures["sky"], -1.0).resizeToFit(game).align(game.getGlobalBounds(), Align::BottomLeft, Align::TopRight);
 		
 		sound_lists.add("jump");
 		sound_lists["jump"].setVolume(sounds.getVolume());

@@ -1,5 +1,7 @@
 # User-Defined
 IGNORE/
+pull.exe
+update.exe
 
 # Prerequisites
 *.d
