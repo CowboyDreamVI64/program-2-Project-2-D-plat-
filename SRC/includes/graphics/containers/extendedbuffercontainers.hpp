@@ -115,10 +115,10 @@ class ExtendedTexture : public TaggableElement<ExtendedTexture> {
 			return *this;
 		}
 };
-class TextureContainer : public TaggableContainer<ExtendedTexture> {
+class TextureContainer : public TaggableContainer<TextureContainer, ExtendedTexture> {
 	public:
 		bool defaultTextureSmoothness = false;
-		unordered_map<string, ExtendedTexture> extended_texture;
+		unordered_map<string, ExtendedTexture>& extended_texture;
 		TextureContainer& update_smoothness() {
 			for (pair<const string, ExtendedTexture>& currentExtendedTexture : extended_texture) {
 				extended_texture.at(currentExtendedTexture.first).setSmooth(defaultTextureSmoothness);
@@ -203,9 +203,7 @@ class TextureContainer : public TaggableContainer<ExtendedTexture> {
 		const sf::Texture& operator[](const string& inputID) const {
 			return *extended_texture.at(inputID).texture;
 		}
-		TextureContainer() {
-			taggables = &extended_texture;
-		}
+		TextureContainer() : extended_texture(taggables) {}
 };
 
 class ExtendedSoundBuffer : public TaggableElement<ExtendedSoundBuffer> {
@@ -305,9 +303,9 @@ class ExtendedSoundBuffer : public TaggableElement<ExtendedSoundBuffer> {
 			return *this;
 		}
 };
-class SoundBufferContainer : public TaggableContainer<ExtendedSoundBuffer> {
+class SoundBufferContainer : public TaggableContainer<SoundBufferContainer, ExtendedSoundBuffer> {
 	public:
-		unordered_map<string, ExtendedSoundBuffer> extended_buffer;
+		unordered_map<string, ExtendedSoundBuffer>& extended_buffer;
 		SoundBufferContainer& load(const string& inputID, const sf::SoundBuffer& inputSoundBuffer) {
 			extended_buffer.insert_or_assign(inputID, ExtendedSoundBuffer(this, inputSoundBuffer));
 			return *this;
@@ -349,9 +347,7 @@ class SoundBufferContainer : public TaggableContainer<ExtendedSoundBuffer> {
 		const sf::SoundBuffer& operator[](const string& inputID) const {
 			return *extended_buffer.at(inputID).buffer;
 		}
-		SoundBufferContainer() {
-			taggables = &extended_buffer;
-		}
+		SoundBufferContainer() : extended_buffer(taggables) {}
 };
 
 class ExtendedFont : public TaggableElement<ExtendedFont> {
@@ -466,10 +462,10 @@ class ExtendedFont : public TaggableElement<ExtendedFont> {
 			return *this;
 		}
 };
-class FontContainer : public TaggableContainer<ExtendedFont> {
+class FontContainer : public TaggableContainer<FontContainer, ExtendedFont> {
 	public:
 		bool defaultFontSmoothness = false;
-		unordered_map<string, ExtendedFont> extended_font;
+		unordered_map<string, ExtendedFont>& extended_font;
 		FontContainer& update_smoothness() {
 			for (pair<const string, ExtendedFont>& currentExtendedFont : extended_font) {
 				extended_font.at(currentExtendedFont.first).setSmooth(defaultFontSmoothness);
@@ -531,7 +527,5 @@ class FontContainer : public TaggableContainer<ExtendedFont> {
 		const sf::Font& operator[](const string& inputID) const {
 			return *extended_font.at(inputID).font;
 		}
-		FontContainer() {
-			taggables = &extended_font;
-		}
+		FontContainer() : extended_font(taggables) {}
 };

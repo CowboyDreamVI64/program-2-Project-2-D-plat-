@@ -46,8 +46,8 @@ namespace frame {
 		
 		fstopwatches.start("accumulated_game_time");
 		
-		sprites.add("player", textures["player"], 0.0).resizeToFit(game).multiply(0.1).align(game.getGlobalBounds(), Align::BottomLeft, Align::TopRight);
-		sprites.add("sky", textures["sky"], -1.0).resizeToFit(game).align(game.getGlobalBounds(), Align::BottomLeft, Align::TopRight);
+		sprites.add("player", textures["player"], 0.0);
+		sprites.add("sky", textures["sky"], -1.0);
 		
 		sound_lists.add("jump");
 		sound_lists["jump"].setVolume(sounds.getVolume());
@@ -64,18 +64,18 @@ namespace frame {
 		player.holdToJump = false;
 		
 		while (game.stableState(frameState)) {
+			while (optional frameEvent = game.window->pollEvent()) {
+				if (game.pollForClosure(frameEvent)) {
+					frameState = false;
+					closeWindow = true;
+				}
+			}
 			if (game.pollForF11()) {
 				game.toggleFullscreen();
 			}
 			if (game.pollForEscape()) {
 				frameState = false;
 				closeWindow = true;
-			}
-			while (optional frameEvent = game.window->pollEvent()) {
-				if (game.pollForClosure(frameEvent)) {
-					frameState = false;
-					closeWindow = true;
-				}
 			}
 			
 			fstopwatches.elapse(1.0f/game.framerate);
@@ -95,8 +95,6 @@ namespace frame {
 				camera.position.y = player.position.y < camera.getPerceivedDimensions(game.resolution).y/2 ? camera.getPerceivedDimensions(game.resolution).y/2 : player.position.y;
 				camera.setInViewport(game, sprites["player"], player.position, {1.0, 2.0});
 				camera.setInViewport(game, sprites["sky"], {32.0, 18.0}, {64, 36});
-				
-				
 				
 			}
 			if (sound_lists["jump"].inactive()) {

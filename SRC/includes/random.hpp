@@ -85,15 +85,15 @@ T psrand64_t(const T& outputMin = 0, const T& outputMax = static_cast<T>(is_floa
 	
 //  This gets a random float.
 inline float frandom(const float& outputMin = 0.0f, const float& outputMax = 1.0f, const bool& inclusiveEnd = false) {
-	return psrand64_t(outputMin, outputMax, inclusiveEnd);
+	return psrand64_t<float>(outputMin, outputMax, inclusiveEnd);
 }
 //  This gets a random double
 inline double drandom(const double& outputMin = 0.0, const double& outputMax = 1.0, const bool& inclusiveEnd = false) {
-	return psrand64_t(outputMin, outputMax, inclusiveEnd);
+	return psrand64_t<double>(outputMin, outputMax, inclusiveEnd);
 }
 //  This gets a random integer
 inline int irandom(const int& outputMin = 0, const int& outputMax = numeric_limits<int>::max(), const bool& inclusiveEnd = false) {
-	return psrand64_t(outputMin, outputMax, inclusiveEnd);
+	return psrand64_t<int>(outputMin, outputMax, inclusiveEnd);
 }
 
 //  This gets a random size_t

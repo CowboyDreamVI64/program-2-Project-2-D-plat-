@@ -1,3 +1,5 @@
+#include "forwarddecl.hpp"
+#include "extendedwindow.hpp"
 #include "template.hpp"
 #include "audiblecontainers.hpp"
 #include "extendeddrawcontainers.hpp"

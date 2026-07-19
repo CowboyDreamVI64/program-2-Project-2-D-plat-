@@ -126,10 +126,10 @@ class Stopwatch : public TaggableElement<Stopwatch<T>> {
 		Stopwatch(StopwatchContainer<T>* StopwatchContainerObject, const T& startingFrame = 0, const bool& inputPause = false, const bool& inputLoop = false, const bool& inputUseMax = false, const T& inputMaxFrame = 0, const bool& inputTickBackwards = false) : frame(startingFrame), localPause(inputPause), loop(inputLoop), useMax(inputUseMax), maxFrame(inputMaxFrame), parentStopwatchContainer(StopwatchContainerObject), tickBackwards(inputTickBackwards) {};
 };
 template <typename T>
-class StopwatchContainer : public TaggableContainer<Stopwatch<T>> {
+class StopwatchContainer : public TaggableContainer<StopwatchContainer<T>, Stopwatch<T>> {
 	public:
 		bool masterPause;
-		unordered_map<string, Stopwatch<T>> stopwatch;
+		unordered_map<string, Stopwatch<T>>& stopwatch;
 		Stopwatch<T>& start(const string& inputID, const T& startingFrame = 0, const bool& inputPause = false, const bool& inputLoop = false, const bool& inputUseMax = false, const T& inputMaxFrame = 0, const bool& inputTickBackwards = false) {
 			stopwatch.insert_or_assign(inputID, Stopwatch(this, startingFrame, inputPause, inputLoop, inputUseMax, inputMaxFrame, inputTickBackwards));
 			return stopwatch.at(inputID);
@@ -198,9 +198,7 @@ class StopwatchContainer : public TaggableContainer<Stopwatch<T>> {
 		const Stopwatch<T>& operator[](const string& inputID) const {
 			return stopwatch.at(inputID);
 		}
-		StopwatchContainer(const bool& inputPause = false) : masterPause(inputPause) {
-			this->taggables = &stopwatch;
-		}
+		StopwatchContainer(const bool& inputPause = false) : masterPause(inputPause), stopwatch(this->taggables) {}
 };
 template <typename T>
 Stopwatch<T>& Stopwatch<T>::elapse(const T& elapseAmount) {

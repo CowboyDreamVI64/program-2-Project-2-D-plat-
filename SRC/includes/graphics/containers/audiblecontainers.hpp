@@ -23,16 +23,16 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			update_pan();
 			return *this;
 		}
-		float getVolume() {
+		float getVolume() const {
 			return localVolume;
 		}
-		float getPan() {
+		float getPan() const {
 			if (sound) {
 				return localPan;
 			}
 			return nan("");
 		}
-		bool getBypassPanShift() {
+		bool getBypassPanShift() const {
 			return bypassPanShift;
 		}
 		SoundEvent& setBypassPanShift(const bool& inputBypassPanShift = false) {
@@ -40,28 +40,28 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			update_pan();
 			return *this;
 		}
-		float getPitch() {
+		float getPitch() const {
 			if (sound) {
 				return sound->getPitch();
 			}
 			return nan("");
 		}
-		bool isPlaying() {
+		bool isPlaying() const {
 			if (sound) {
 				return (sound->getStatus() == sf::Sound::Status::Playing);
 			}
 			return false;
 		}
-		bool isPaused() {
+		bool isPaused() const {
 			return paused;
 		}
-		bool isStopped() {
+		bool isStopped() const {
 			if (sound) {
 				return sound->getStatus() == sf::Sound::Status::Stopped;
 			}
 			return false;
 		}
-		bool isLooping() {
+		bool isLooping() const {
 			return loop;
 		}
 		const sf::SoundBuffer& getBuffer() const {
@@ -70,13 +70,13 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			}
 			return sound->getBuffer();
 		}
-		sf::Time getTimestamp() {
+		sf::Time getTimestamp() const {
 			if (sound) {
 				return sound->getPlayingOffset();
 			}
 			return sf::Time();
 		}
-		sf::Time getDuration() {
+		sf::Time getDuration() const {
 			if (sound) {
 				return sound->getBuffer().getDuration();
 			}
@@ -88,22 +88,22 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			}
 			return *this;
 		}
-		float getTimestamp_sec() {
+		float getTimestamp_sec() const {
 			return getTimestamp().asSeconds();
 		}
-		float getTimestamp_ms() {
+		float getTimestamp_ms() const {
 			return getTimestamp().asMilliseconds();
 		}
-		float getTimestamp_us() {
+		float getTimestamp_us() const {
 			return getTimestamp().asMicroseconds();
 		}
-		float getDuration_sec() {
+		float getDuration_sec() const {
 			return getDuration().asSeconds();
 		}
-		float getDuration_ms() {
+		float getDuration_ms() const {
 			return getDuration().asMilliseconds();
 		}
-		float getDuration_us() {
+		float getDuration_us() const {
 			return getDuration().asMicroseconds();
 		}
 		SoundEvent& setTimestamp_sec(const float& inputTimestamp) {
@@ -118,7 +118,7 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			setTimestamp(sf::microseconds(inputTimestamp));
 			return *this;
 		}
-		SoundEvent& setBuffer(sf::SoundBuffer& inputBuffer) {
+		SoundEvent& setBuffer(const sf::SoundBuffer& inputBuffer) {
 			delete sound;
 			sound = new sf::Sound(inputBuffer);
 			update();
@@ -189,7 +189,7 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			}
 			return *this;
 		}
-		SoundEvent(SoundContainer* SoundContainerObject, sf::SoundBuffer& inputBuffer, const float& inputLocalVolume = 1.0, const bool& playNow = true, const bool& loopNow = false, const bool& inputBypassPanShift = false) : localVolume(inputLocalVolume), paused(!playNow), loop(loopNow), parentSoundContainer(SoundContainerObject), bypassPanShift(inputBypassPanShift) {
+		SoundEvent(SoundContainer* SoundContainerObject, const sf::SoundBuffer& inputBuffer, const float& inputLocalVolume = 1.0, const bool& playNow = true, const bool& loopNow = false, const bool& inputBypassPanShift = false) : localVolume(inputLocalVolume), paused(!playNow), loop(loopNow), parentSoundContainer(SoundContainerObject), bypassPanShift(inputBypassPanShift) {
 			sound = new sf::Sound(inputBuffer);
 			localVolume = localVolume >= 1.0 ? 1.0 : localVolume;
 			localVolume *= localVolume >= 0.0;
@@ -201,7 +201,7 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			sound = nullptr;
 			return;
 		}
-		SoundEvent(SoundEvent& originalObject) {
+		SoundEvent(const SoundEvent& originalObject) {
 			if (originalObject.sound) {
 				sound = new sf::Sound(*originalObject.sound);
 			} else {
@@ -214,7 +214,7 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			update();
 			return;
 		}
-		SoundEvent& operator=(SoundEvent& rObject) {
+		SoundEvent& operator=(const SoundEvent& rObject) {
 			if (this != &rObject) {
 				delete sound;
 				if (rObject.sound) {
@@ -256,7 +256,7 @@ class SoundEvent : public TaggableElement<SoundEvent> {
 			return *this;
 		}
 };
-class SoundContainer : public TaggableContainer<SoundEvent> {
+class SoundContainer : public TaggableContainer<SoundContainer, SoundEvent> {
 	friend SoundEvent;
 	
 	private:
@@ -264,7 +264,7 @@ class SoundContainer : public TaggableContainer<SoundEvent> {
 		float panShift = 0.0;
 		bool masterPaused = false;
 	public:
-		unordered_map<string, SoundEvent> event;
+		unordered_map<string, SoundEvent>& event;
 		SoundEvent& play(const string& inputID, sf::SoundBuffer& inputBuffer, const float& inputLocalVolume = 1.0, const bool& playNow = true, const bool& loopNow = false, const bool& inputBypassPanShift = false) {
 			event.insert_or_assign(inputID, SoundEvent(this, inputBuffer, inputLocalVolume, playNow, loopNow, inputBypassPanShift));
 			return event.at(inputID);
@@ -293,16 +293,16 @@ class SoundContainer : public TaggableContainer<SoundEvent> {
 			update_pause();
 			return *this;
 		}
-		float getVolume() {
+		float getVolume() const {
 			return masterVolume;
 		}
-		bool isPlaying() {
+		bool isPlaying() const {
 			return !masterPaused;
 		}
-		bool isPaused() {
+		bool isPaused() const {
 			return masterPaused;
 		}
-		bool exists(const string& inputID) {
+		bool exists(const string& inputID) const {
 			return event.count(inputID) != 0;
 		}
 		SoundContainer& update_pan() {
@@ -311,7 +311,7 @@ class SoundContainer : public TaggableContainer<SoundEvent> {
 			}
 			return *this;
 		}
-		float getPanShift(const bool& deg = true) {
+		float getPanShift(const bool& deg = true) const {
 			return panShift * (deg ? 180.0 / acos(-1.0) : 1.0);
 		}
 		SoundContainer& setPanShift(float inputFloat = 0.0, const bool& deg = true) {
@@ -368,8 +368,7 @@ class SoundContainer : public TaggableContainer<SoundEvent> {
 		const SoundEvent& operator[](const string& inputID) const {
 			return event.at(inputID);
 		}
-		SoundContainer(const float& inputMasterVolume = 1.0) : masterVolume(inputMasterVolume) {
-			taggables = &event;
+		SoundContainer(const float& inputMasterVolume = 1.0) : masterVolume(inputMasterVolume), event(taggables) {
 			masterVolume = masterVolume >= 1.0 ? 1.0 : masterVolume;
 			masterVolume *= masterVolume >= 0.0;
 			return;
@@ -377,7 +376,11 @@ class SoundContainer : public TaggableContainer<SoundEvent> {
 };
 SoundEvent& SoundEvent::update_volume() {
 	if (sound && parentSoundContainer) {
-		sound->setVolume(localVolume*parentSoundContainer->masterVolume*100.0f);
+		if (parentSoundContainer) {
+			sound->setVolume(localVolume*parentSoundContainer->masterVolume*100.0f);
+		} else {
+			sound->setVolume(localVolume*100.0f);
+		}
 	}
 	return *this;
 }
@@ -392,8 +395,8 @@ SoundEvent& SoundEvent::update_pan() {
 	return *this;
 }
 SoundEvent& SoundEvent::update_pause() {
-	if (sound && parentSoundContainer) {
-		if (paused || parentSoundContainer->masterPaused) {
+	if (sound) {
+		if (paused || (parentSoundContainer && parentSoundContainer->masterPaused)) {
 			sound->pause();
 		} else {
 			sound->play();
@@ -443,13 +446,13 @@ class MusicEvent : public TaggableElement<MusicEvent> {
 			update_loop_points();
 			return *this;
 		}
-		sf::Music::TimeSpan getLoopPoints() {
+		sf::Music::TimeSpan getLoopPoints() const {
 			return music.getLoopPoints();
 		}
-		sf::Time getLoopPointStart() {
+		sf::Time getLoopPointStart() const {
 			return loopStart;
 		}
-		sf::Time getLoopPointDuration(const bool& useEndAsDuration = true) {
+		sf::Time getLoopPointDuration(const bool& useEndAsDuration = true) const {
 			if (useEndAsDuration) {
 				return loopEnd - loopStart;
 			} else {
@@ -483,43 +486,43 @@ class MusicEvent : public TaggableElement<MusicEvent> {
 			setLoopPoints(sf::microseconds(startDuration), sf::microseconds(endDuration), useEndAsDuration);
 			return *this;
 		}
-		sf::Time loop_begin() {
+		sf::Time loop_begin() const {
 			return loopStart;
 		}
-		sf::Time loop_end() {
+		sf::Time loop_end() const {
 			return loopEnd;
 		}
-		sf::Time loop_duration() {
+		sf::Time loop_duration() const {
 			return loopEnd - loopStart;
 		}
-		sf::Time duration() {
+		sf::Time duration() const {
 			return music.getDuration();
 		}
-		float getLoopPointStart_sec() {
+		float getLoopPointStart_sec() const {
 			return getLoopPointStart().asSeconds();
 		}
-		float getLoopPointStart_ms() {
+		float getLoopPointStart_ms() const {
 			return getLoopPointStart().asMilliseconds();
 		}
-		float getLoopPointStart_us() {
+		float getLoopPointStart_us() const {
 			return getLoopPointStart().asMicroseconds();
 		}
-		float getLoopPointDuration_sec(const bool& useEndAsDuration = true) {
+		float getLoopPointDuration_sec(const bool& useEndAsDuration = true) const {
 			return getLoopPointDuration(useEndAsDuration).asSeconds();
 		}
-		float getLoopPointDuration_ms(const bool& useEndAsDuration = true) {
+		float getLoopPointDuration_ms(const bool& useEndAsDuration = true) const {
 			return getLoopPointDuration(useEndAsDuration).asMilliseconds();
 		}
-		float getLoopPointDuration_us(const bool& useEndAsDuration = true) {
+		float getLoopPointDuration_us(const bool& useEndAsDuration = true) const {
 			return getLoopPointDuration(useEndAsDuration).asMicroseconds();
 		}
-		float getVolume() {
+		float getVolume() const {
 			return localVolume;
 		}
-		float getPan() {
+		float getPan() const {
 			return localPan;
 		}
-		bool getBypassPanShift() {
+		bool getBypassPanShift() const {
 			return bypassPanShift;
 		}
 		MusicEvent& setBypassPanShift(const bool& inputBypassPanShift = false) {
@@ -527,47 +530,47 @@ class MusicEvent : public TaggableElement<MusicEvent> {
 			update_pan();
 			return *this;
 		}
-		float getPitch() {
+		float getPitch() const {
 			return music.getPitch();
 		}
-		bool isPlaying() {
+		bool isPlaying() const {
 			return (music.getStatus() == sf::Music::Status::Playing);
 		}
-		bool isPaused() {
+		bool isPaused() const {
 			return paused;
 		}
-		bool isStopped() {
+		bool isStopped() const {
 			return music.getStatus() == sf::Music::Status::Stopped;
 		}
-		bool isLooping() {
+		bool isLooping() const {
 			return loop;
 		}
-		sf::Time getTimestamp() {
+		sf::Time getTimestamp() const {
 			return music.getPlayingOffset();
 		}
-		sf::Time getDuration() {
+		sf::Time getDuration() const {
 			return music.getDuration();
 		}
 		MusicEvent& setTimestamp(const sf::Time& inputTime) {
 			music.setPlayingOffset(inputTime);
 			return *this;
 		}
-		float getTimestamp_sec() {
+		float getTimestamp_sec() const {
 			return getTimestamp().asSeconds();
 		}
-		float getTimestamp_ms() {
+		float getTimestamp_ms() const {
 			return getTimestamp().asMilliseconds();
 		}
-		float getTimestamp_us() {
+		float getTimestamp_us() const {
 			return getTimestamp().asMicroseconds();
 		}
-		float getDuration_sec() {
+		float getDuration_sec() const {
 			return getDuration().asSeconds();
 		}
-		float getDuration_ms() {
+		float getDuration_ms() const {
 			return getDuration().asMilliseconds();
 		}
-		float getDuration_us() {
+		float getDuration_us() const {
 			return getDuration().asMicroseconds();
 		}
 		MusicEvent& setTimestamp_sec(const float& inputTimestamp) {
@@ -695,7 +698,7 @@ class MusicEvent : public TaggableElement<MusicEvent> {
 			return;
 		}
 };
-class MusicContainer : public TaggableContainer<MusicEvent> {
+class MusicContainer : public TaggableContainer<MusicContainer, MusicEvent> {
 	friend MusicEvent;
 	
 	private:
@@ -703,7 +706,7 @@ class MusicContainer : public TaggableContainer<MusicEvent> {
 		float panShift = 0.0;
 		bool masterPaused = false;
 	public:
-		unordered_map<string, MusicEvent> event;
+		unordered_map<string, MusicEvent>& event;
 		MusicContainer& play(const string& inputID, const string& inputPath, const float& inputLocalVolume = 1.0, const bool& playNow = true, const bool& loopNow = false, const bool& inputBypassPanShift = false) {
 			event.insert_or_assign(inputID, MusicEvent(this, inputPath, inputLocalVolume, playNow, loopNow, inputBypassPanShift));
 			return *this;
@@ -740,16 +743,16 @@ class MusicContainer : public TaggableContainer<MusicEvent> {
 			update_pause();
 			return *this;
 		}
-		float getVolume() {
+		float getVolume() const {
 			return masterVolume;
 		}
-		bool isPlaying() {
+		bool isPlaying() const {
 			return !masterPaused;
 		}
-		bool isPaused() {
+		bool isPaused() const {
 			return masterPaused;
 		}
-		bool exists(const string& inputID) {
+		bool exists(const string& inputID) const {
 			return event.count(inputID) != 0;
 		}
 		MusicContainer& update_pan() {
@@ -758,7 +761,7 @@ class MusicContainer : public TaggableContainer<MusicEvent> {
 			}
 			return *this;
 		}
-		float getPanShift(const bool& deg = true) {
+		float getPanShift(const bool& deg = true) const {
 			return panShift * (deg ? 180.0 / acos(-1.0) : 1.0);
 		}
 		MusicContainer& setPanShift(float inputFloat = 0.0, const bool& deg = true) {
@@ -815,17 +818,17 @@ class MusicContainer : public TaggableContainer<MusicEvent> {
 		const MusicEvent& operator[](const string& inputID) const {
 			return event.at(inputID);
 		}
-		MusicContainer(const float& inputMasterVolume = 1.0) : masterVolume(inputMasterVolume) {
+		MusicContainer(const float& inputMasterVolume = 1.0) : masterVolume(inputMasterVolume), event(taggables) {
 			masterVolume = masterVolume >= 1.0 ? 1.0 : masterVolume;
 			masterVolume *= masterVolume >= 0.0;
-			
-			taggables = &event;
 			return;
 		}
 };
 MusicEvent& MusicEvent::update_volume() {
 	if (parentMusicContainer) {
 		music.setVolume(localVolume*parentMusicContainer->masterVolume*100.0f);
+	} else {
+		music.setVolume(localVolume*100.0f);
 	}
 	return *this;
 }
@@ -838,12 +841,10 @@ MusicEvent& MusicEvent::update_pan() {
 	return *this;
 }
 MusicEvent& MusicEvent::update_pause() {
-	if (parentMusicContainer) {
-		if (paused || parentMusicContainer->masterPaused) {
-			music.pause();
-		} else {
-			music.play();
-		}
+	if (paused || (parentMusicContainer && parentMusicContainer->masterPaused)) {
+		music.pause();
+	} else {
+		music.play();
 	}
 	return *this;
 }
