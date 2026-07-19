@@ -1,230 +1,299 @@
+//  A class that stores details about entities and simulates their physics.
 class Entity {
 	protected:
-		bool __UP = false;
-		bool __UP_TRIGGERED = false;
-		bool __LEFT = false;
-		bool __LEFT_TRIGGERED = false;
-		bool __DOWN = false;
-		bool __DOWN_TRIGGERED = false;
-		bool __RIGHT = false;
-		bool __RIGHT_TRIGGERED = false;
-		bool __JUMP = false;
-		bool __JUMP_TRIGGERED = false;
-		bool __SPRINT = false;
-		bool __SPRINT_TRIGGERED = false;
-		bool __ON_GROUND = false;
-		bool __ON_GROUND_TRIGGERED = false;
-		bool __IS_JUMPING = false;
-		bool __IS_JUMPING_TRIGGERED = false;
-		bool __IS_SKIDDING = false;
-		bool __IS_SKIDDING_TRIGGERED = false;
-		size_t __JUMP_FRAMES = 0;
+		//  Mutable boolean checks for certain movement types and triggers.
+		bool UP = false;
+		bool UP_TRIGGERED = false;
+		bool LEFT = false;
+		bool LEFT_TRIGGERED = false;
+		bool DOWN = false;
+		bool DOWN_TRIGGERED = false;
+		bool RIGHT = false;
+		bool RIGHT_TRIGGERED = false;
+		bool JUMP = false;
+		bool JUMP_TRIGGERED = false;
+		bool SPRINT = false;
+		bool SPRINT_TRIGGERED = false;
+		bool ON_GROUND = false;
+		bool ON_GROUND_TRIGGERED = false;
+		bool IS_JUMPING = false;
+		bool IS_JUMPING_TRIGGERED = false;
+		bool IS_SPRINTING = false;
+		bool IS_SPRINTING_TRIGGERED = false;
+		bool IS_SKIDDING = false;
+		bool IS_SKIDDING_TRIGGERED = false;
+		size_t JUMP_BUFFER = 0;
 		
 		double maxSpeed = 0.0;
 	public:
-		const bool& up = __UP;
-		const bool& left = __LEFT;
-		const bool& down = __DOWN;
-		const bool& right = __RIGHT;
-		const bool& jump = __JUMP;
-		const bool& sprint = __SPRINT;
+		//  Read-only versions of the boolean checks above.
+		const bool& up = UP;
+		const bool& left = LEFT;
+		const bool& down = DOWN;
+		const bool& right = RIGHT;
+		const bool& jump = JUMP;
+		const bool& sprint = SPRINT;
 		
-		const bool& up_triggered = __UP_TRIGGERED;
-		const bool& left_triggered = __LEFT_TRIGGERED;
-		const bool& down_triggered = __DOWN_TRIGGERED;
-		const bool& right_triggered = __RIGHT_TRIGGERED;
-		const bool& jump_triggered = __JUMP_TRIGGERED;
-		const bool& sprint_triggered = __SPRINT_TRIGGERED;
+		const bool& up_triggered = UP_TRIGGERED;
+		const bool& left_triggered = LEFT_TRIGGERED;
+		const bool& down_triggered = DOWN_TRIGGERED;
+		const bool& right_triggered = RIGHT_TRIGGERED;
+		const bool& jump_triggered = JUMP_TRIGGERED;
+		const bool& sprint_triggered = SPRINT_TRIGGERED;
 		
-		const bool& onGround = __ON_GROUND;
-		const bool& isJumping = __IS_JUMPING;
-		const size_t& jumpFrames = __JUMP_FRAMES;
+		const bool& onGround = ON_GROUND;
+		const bool& isJumping = IS_JUMPING;
+		const bool& is_sprinting = IS_SPRINTING;
+		const size_t& jumpFrames = JUMP_BUFFER;
 		
-		const bool& on_ground_triggered = __ON_GROUND_TRIGGERED;
-		const bool& is_jumping_triggered = __IS_JUMPING_TRIGGERED;
+		const bool& on_ground_triggered = ON_GROUND_TRIGGERED;
+		const bool& is_jumping_triggered = IS_JUMPING_TRIGGERED;
+		const bool& is_sprinting_triggered = IS_SPRINTING_TRIGGERED;
 		
-		const bool& isSkidding = __IS_SKIDDING;
-		const bool& is_skidding_triggered = __IS_SKIDDING_TRIGGERED;
+		const bool& isSkidding = IS_SKIDDING;
+		const bool& is_skidding_triggered = IS_SKIDDING_TRIGGERED;
 		
 		Vec2 hitbox;
 		Vec2 acceleration_const;
 		Vec2 acceleration = {0.0, 0.0};
 		Vec2 velocity = {0.0, 0.0};
 		Vec2 position;
+		
+		//  If true, the entity will not accelerate towards their max speed or to a halt.
 		bool snapToSpeed = false;
 		
-		double accelerationConstYJumpingMultiplier = 1.0;
+		//  A multiplier applied to the entity's constant acceleration (which is usually gravity) when jumping.
+		Vec2 accelerationConstJumpingMultiplier = 1.0;
 		
+		//  A coefficient that slows the entity's x velocity down if they are on the ground.
 		double frictionCoefficient;
+		
+		//  The multiplier for friction slowdown when the entity is in the air.
 		double frictionCoefficientAirMultiplier = 0.0;
+		
+		//  A coefficient that slows the entity's y velocity down.
 		double dragCoefficient;
+		
+		//  The multiplier for drag when the entity is jumping up.
 		double dragCoefficientJumpingMultiplier = 0.1;
+		
+		//  The speed reduction multiplier for when the entity is moving too fast and wants to turn around.
 		double skidMultiplier = 0.0;
 		
+		//  The base speed the entity can go
 		double speed;
+		
+		//  The multiplier applied to the base speed above when the entity is sprinting.
 		double sprintSpeedMultiplier = 2;
 		
+		//  The strength of the entity's jump.
 		double jumpForce;
+		
+		//  The multiplier applied to the entity's jump force when moving faster than base speed.
 		double jumpForceSprintingMultiplier = 1.15;
-		size_t maxJumpFrames = 0;
-		bool holdToJump = true;
+		
+		//  If true, the entity can hold the jump input to keep jumping; else, the entity will need to stop inputting jump then reinput jump again.
+		bool autoJump = true;
+		
+		//  The number of frames the entity's jump is valid for since input before the entity needs to reinput jump.
+		//  Only effective if autoJump is false.
+		size_t maxJumpBufferFrames = 0;
 	
+		//  The default boolean array of input for the entity; setting any of these boolean values to "true" will make the corresponding movement
+		//  register as input when no keybinds are passed through "receiveInput."
 		std::array<bool, 6> constInput;
 	
-		Entity& receiveInput(const std::array<bool, 6>& booleans = std::array<bool, 6>()) {
-			__UP_TRIGGERED = false;
-			__LEFT_TRIGGERED = false;
-			__DOWN_TRIGGERED = false;
-			__RIGHT_TRIGGERED = false;
-			__JUMP_TRIGGERED = false;
-			__SPRINT_TRIGGERED = false;
+		//  Takes a list of booleans as input.
+		Entity& receiveInput(const std::array<bool, 6>& booleans) {
+			UP_TRIGGERED = false;
+			LEFT_TRIGGERED = false;
+			DOWN_TRIGGERED = false;
+			RIGHT_TRIGGERED = false;
+			JUMP_TRIGGERED = false;
+			SPRINT_TRIGGERED = false;
 			
 			if (booleans[0]) {
-				if (!__UP) {
-					__UP_TRIGGERED = true;
+				if (!UP) {
+					UP_TRIGGERED = true;
 				}
-				__UP = true;
+				UP = true;
 			} else {
-				__UP = false;
+				UP = false;
 			}
 			if (booleans[1]) {
-				if (!__LEFT) {
-					__LEFT_TRIGGERED = true;
+				if (!LEFT) {
+					LEFT_TRIGGERED = true;
 				}
-				__LEFT = true;
+				LEFT = true;
 			} else {
-				__LEFT = false;
+				LEFT = false;
 			}
 			if (booleans[2]) {
-				if (!__DOWN) {
-					__DOWN_TRIGGERED = true;
+				if (!DOWN) {
+					DOWN_TRIGGERED = true;
 				}
-				__DOWN = true;
+				DOWN = true;
 			} else {
-				__DOWN = false;
+				DOWN = false;
 			}
 			if (booleans[3]) {
-				if (!__RIGHT) {
-					__RIGHT_TRIGGERED = true;
+				if (!RIGHT) {
+					RIGHT_TRIGGERED = true;
 				}
-				__RIGHT = true;
+				RIGHT = true;
 			} else {
-				__RIGHT = false;
+				RIGHT = false;
 			}
 			if (booleans[4]) {
-				if (!__JUMP) {
-					__JUMP_TRIGGERED = true;
+				if (!JUMP) {
+					JUMP_TRIGGERED = true;
 				}
-				__JUMP = true;
+				JUMP = true;
 			} else {
-				__JUMP = false;
+				JUMP = false;
 			}
 			if (booleans[5]) {
-				if (!__SPRINT) {
-					__SPRINT_TRIGGERED = true;
+				if (!SPRINT) {
+					SPRINT_TRIGGERED = true;
 				}
-				__SPRINT = true;
+				SPRINT = true;
 			} else {
-				__SPRINT = false;
+				SPRINT = false;
 			}
 			return *this;
 		}
+		
+		//  Takes the boolean list "constInput" as input.
 		Entity& receiveInput() {
 			return receiveInput(constInput);
 		}
-		Entity& receiveInput(ExtendedWindow& window, const KeyBind& inputKeyBinds) {
+		
+		//  Takes the passed keybinds, checks whether each key is being registered in the passed window, and uses the corresponding checks as input.
+		Entity& receiveInput(const ExtendedWindow& window, const KeyBind& inputKeyBinds) {
 			return receiveInput(inputKeyBinds.getInputBool(window));
 		}
 		
-		
-			
+		//  A bunch of physics and math that calculates the momentum and position of the entity as well as changing some triggers.
 		Entity& tickPhysics(const size_t& TPS) {
-			__ON_GROUND_TRIGGERED = false;
-			__IS_JUMPING_TRIGGERED = false;
+			//  True if the entity just touched the ground.
+			ON_GROUND_TRIGGERED = false;
 			
+			//  True if the entity just jumped.
+			IS_JUMPING_TRIGGERED = false;
 			
+			//  True if the entity is sprinting.
+			IS_SPRINTING_TRIGGERED = false;
+			
+			//  Sets the jump buffer to the max if the entity inputted jump; else, decrements the jump buffer.
 			if (jump_triggered) {
-				__JUMP_FRAMES = maxJumpFrames;
-			} else if (__JUMP_FRAMES > 0) {
-				--__JUMP_FRAMES;
+				JUMP_BUFFER = maxJumpBufferFrames;
+			} else if (JUMP_BUFFER > 0) {
+				--JUMP_BUFFER;
 			}
 			
 			
-			maxSpeed = speed * (sprint ? sprintSpeedMultiplier : 1.0);
+			//  Checks if the player can actually sprint
+			if (sprint && (left || right)) {
+				if (!IS_SPRINTING) {
+					IS_SPRINTING_TRIGGERED = true;
+				}
+				IS_SPRINTING = true;
+			} else {
+				IS_SPRINTING = false;
+			}
+			
+			//  Sets the maximum move speed of the entity based on the sprint speed multiplier.
+			maxSpeed = speed * (is_sprinting ? sprintSpeedMultiplier : 1.0);
 			
 			
 			if (jump) {
-				if (onGround && (holdToJump || jump_triggered || jumpFrames != 0)) {
-					__IS_JUMPING_TRIGGERED = true;
-					__IS_JUMPING = true;
-					__ON_GROUND = false;
-					velocity.y += jumpForce * (velocity.x_abs() > speed ? jumpForceSprintingMultiplier : 1.0);
+				if (onGround && (autoJump || jump_triggered || jumpFrames != 0)) {
+					IS_JUMPING_TRIGGERED = true;
+					
+					//  True if the entity is in a jump at the moment.
+					IS_JUMPING = true;
+					ON_GROUND = false;
+					
+					//  Calculates the addition to the player's y velocity when the player jumped.
+					velocity.y += jumpForce * (velocity.x_abs() > speed*1.05 ? jumpForceSprintingMultiplier : 1.0);
 				}
 			} else {
-				__IS_JUMPING = false;
+				IS_JUMPING = false;
 			}
 			
-			
-			__IS_SKIDDING_TRIGGERED = false;
-			if (onGround && ((left && !right && velocity.x > speed*0.8) || (right && !left && velocity.x < -speed*0.8))) {
-				if (!__IS_SKIDDING) {
-					__IS_SKIDDING_TRIGGERED = true;
+			//  True if the player starts skidding.
+			IS_SKIDDING_TRIGGERED = false;
+			if (onGround && ((left && !right && velocity.x > speed*1.05) || (right && !left && velocity.x < -speed*1.05))) {
+				if (!IS_SKIDDING) {
+					IS_SKIDDING_TRIGGERED = true;
 				}
-				__IS_SKIDDING = true;
-			} else {
-				__IS_SKIDDING = false;
+				//  True if the player is currently skidding.
+				IS_SKIDDING = true;
+			} else if (!onGround || ((left && !right && velocity.x > 0.0) || (right && !left && velocity.x < 0.0))) {
+				IS_SKIDDING = false;
 			}
 			
-			
+			//  Math and control structures that control how to apply speed to velocity.
 			if (!snapToSpeed || velocity.x_abs() > maxSpeed) {
 				if (left && !right && velocity.x > -maxSpeed) {
+					//  This pushes the player leftwards.
 					acceleration.x -= (isSkidding ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(onGround ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
 				}
 				if (right && !left && velocity.x < maxSpeed) {
+					//  This pushes the player rightwards.
 					acceleration.x += (isSkidding ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(onGround ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
 				}
 			} else {
+				//  If the player's speed snaps, this sets their speed to 0.0 when they are below their maximum speed.
 				velocity.x = 0.0;
 				if (left && !right) {
+				//  If the player's speed snaps, this sets their speed to max towards the left.
 					velocity.x = -maxSpeed;
 				}
 				if (right && !left) {
+				//  If the player's speed snaps, this sets their speed to max towards the right.
 					velocity.x = maxSpeed;
 				}
 			}
 			
 			
-			
+			//  Applies a multiplier to gravity when the player is jumping.
 			if (isJumping && velocity.y > 0) {
-				acceleration.y -= (1.0 - accelerationConstYJumpingMultiplier)*acceleration_const.y;
+				acceleration -= (Vec2(1.0) - accelerationConstJumpingMultiplier)*acceleration_const;
 			}
 			
-			
+			//  This applies acceleration to velocity.
 			velocity += acceleration/TPS;
 			
-			
-			velocity.x *= exp(-frictionCoefficient*(onGround ? 1.0 : frictionCoefficientAirMultiplier)/TPS);
+			//  This modifies velocity to account for friction and drag.
+			if (velocity.x_abs() > maxSpeed*0.6/TPS) {
+				velocity.x *= exp(-frictionCoefficient*(onGround ? 1.0 : frictionCoefficientAirMultiplier)/TPS);
+			} else {
+				velocity.x = 0.0;
+			}
 			velocity.y *= exp(-dragCoefficient*(isJumping && velocity.y > 0 ? dragCoefficientJumpingMultiplier : 1.0)/TPS);
 			
+			//  This applies velocity to position.acceleration_const
 			position += velocity/TPS;
 			
+			//  This resets acceleration to acceleration_const.
 			acceleration = acceleration_const;
 			
-			
+			//  This is a temporary "ground" that has been set until block loading and collision have been established.
 			const double GROUND_HEIGHT = 0.7;
 			if (position.y < GROUND_HEIGHT + hitbox.y/2) {
 				position.y = GROUND_HEIGHT + hitbox.y/2;
 				velocity.y = 0.0;
-				if (!__ON_GROUND) {
-					__ON_GROUND_TRIGGERED = true;
+				if (!ON_GROUND) {
+					ON_GROUND_TRIGGERED = true;
 				}
-				__ON_GROUND = true;
+				ON_GROUND = true;
 			}
-			
 			
 			return *this;
 		}
 	
+		//  The default Entity constructor
 		Entity(
 			const Vec2& inputPosition = {0.0, 0.0},
 			const Vec2& inputHitbox = {1.0, 1.0},

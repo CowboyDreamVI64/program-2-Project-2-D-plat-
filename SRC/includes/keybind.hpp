@@ -8,7 +8,7 @@ struct KeyBind {
 	sf::Keyboard::Key sprint;
 	
 	//  This returns a list of boolean that are true depending on if the corresponding key WAS pressed
-	array<bool, 6> getInputBool(ExtendedWindow& window) const {
+	array<bool, 6> getInputBool(const ExtendedWindow& window) const {
 		return {
 			game.pollForKey(up),
 			game.pollForKey(left),

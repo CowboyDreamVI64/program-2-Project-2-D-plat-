@@ -1,5 +1,5 @@
 sf::Texture lastFrameScreenshot;
-ExtendedWindow game = ExtendedWindow("Platformer", {1280, 720}, 60, false, false, 0.67);	
+ExtendedWindow game = ExtendedWindow("Platformer", {1920, 1080}, 60, false, false, 0.67);	
 SoundContainer sounds = SoundContainer();
 MusicContainer musics = MusicContainer();
 SpriteContainer sprites = SpriteContainer();
