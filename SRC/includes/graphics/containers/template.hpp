@@ -655,3 +655,32 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 		
 		DrawableContainer(float inputInitialSizeMultiplier = 1.0) : initialSizeMultiplier(inputInitialSizeMultiplier) {}
 };
+
+template <typename Audible_c, typename Container_c, typename Element_c>
+class AudibleElement : public TaggableElement<Element_c> {
+	protected:
+		inline Element_c& this_dref() {
+			return static_cast<Element_c&>(*this);
+		}
+		inline const Element_c& this_dref() const {
+			return static_cast<const Element_c&>(*this);
+		}
+		inline virtual Audible_c& audible() = 0;
+		inline const virtual Audible_c& audible() const = 0;
+		bool audibleValid() const = 0;
+	public:
+		
+	
+};
+template <typename Audible_c, typename Container_c, typename Element_c>
+class AudibleContainer : public TaggableContainer<Container_c, Element_c> {
+	protected:
+		inline Container_c& this_dref() {
+			return static_cast<Container_c&>(*this);
+		}
+		inline const Container_c& this_dref() const {
+			return static_cast<const Container_c&>(*this);
+		}
+	public:
+		
+};
