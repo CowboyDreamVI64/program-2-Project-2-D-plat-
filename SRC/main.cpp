@@ -1,7 +1,7 @@
 #include "includes/all.hpp"
 
 //  You guys can write whatever code you want here as long as it works; if you
-//  want me to move it to something proper, feel free to let me know.
+//  want me to move it to somewhere proper, feel free to let me know.
 
 
 

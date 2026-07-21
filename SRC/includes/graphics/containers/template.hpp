@@ -143,6 +143,9 @@ class TaggableContainer {
 
 template <typename Drawable_c, typename Container_c, typename Element_c>
 class DrawableElement : public TaggableElement<Element_c> {
+	friend DrawableContainer<Drawable_c, Container_c, Element_c>;
+	friend Element_c;
+	
 	protected:
 		inline Element_c& this_dref() {
 			return static_cast<Element_c&>(*this);
@@ -150,13 +153,14 @@ class DrawableElement : public TaggableElement<Element_c> {
 		inline const Element_c& this_dref() const {
 			return static_cast<const Element_c&>(*this);
 		}
+		
+		bool hidden = false;
+		float opacity = 1.0;
 	public:
 		Container_c* parentContainer;
 		Drawable_c d;
 		sf::Shader* shader = nullptr;
 		double z;
-		bool hidden = false;
-		float opacity = 1.0;
 		
 		inline Drawable_c& drawable() {
 			return d;
@@ -456,7 +460,7 @@ class DrawableElement : public TaggableElement<Element_c> {
 		template <typename dConstructorT>
 		DrawableElement(Container_c* inputParentContainer, const dConstructorT& inputDConstructor, double inputZ = 0) : z(inputZ), d(inputDConstructor), parentContainer(inputParentContainer) {}
 		DrawableElement(const DrawableElement& other) : z(other.z), d(other.d), parentContainer(other.parentContainer), shader(other.shader), hidden(other.hidden), opacity(other.opacity) {};
-		DrawableElement(DrawableElement&& other) : z(other.z), d(other.d), parentContainer(other.parentContainer), shader(other.shader), hidden(other.hidden), opacity(other.opacity) {};
+		DrawableElement(DrawableElement&& other) noexcept : z(other.z), d(other.d), parentContainer(other.parentContainer), shader(other.shader), hidden(other.hidden), opacity(other.opacity) {};
 		DrawableElement& operator=(const DrawableElement& other) {
 			z = other.z;
 			d = other.d;
@@ -466,7 +470,7 @@ class DrawableElement : public TaggableElement<Element_c> {
 			opacity = other.opacity;
 			return this_dref();
 		}
-		DrawableElement& operator=(DrawableElement&& other) {
+		DrawableElement& operator=(DrawableElement&& other) noexcept {
 			z = other.z;
 			d = other.d;
 			parentContainer = other.parentContainer;
@@ -478,6 +482,9 @@ class DrawableElement : public TaggableElement<Element_c> {
 };
 template <typename Drawable_c, typename Container_c, typename Element_c>
 class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
+	friend DrawableElement<Drawable_c, Container_c, Element_c>;
+	friend Element_c;
+	
 	protected:
 		inline Container_c& this_dref() {
 			return static_cast<Container_c&>(*this);
@@ -646,11 +653,11 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 		}
 		
 		inline Element_c& operator[](const string& inputID) {
-			return extended_drawable().at(inputID);
+			return extended_drawable().at(inputID).this_dref();
 		}
 		
 		inline const Element_c& operator[](const string& inputID) const {
-			return extended_drawable().at(inputID);
+			return extended_drawable().at(inputID).this_dref();
 		}
 		
 		DrawableContainer(float inputInitialSizeMultiplier = 1.0) : initialSizeMultiplier(inputInitialSizeMultiplier) {}
@@ -658,6 +665,9 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 
 template <typename Audible_c, typename Container_c, typename Element_c>
 class AudibleElement : public TaggableElement<Element_c> {
+	friend AudibleContainer<Audible_c, Container_c, Element_c>;
+	friend Container_c;
+	
 	protected:
 		inline Element_c& this_dref() {
 			return static_cast<Element_c&>(*this);
@@ -665,16 +675,248 @@ class AudibleElement : public TaggableElement<Element_c> {
 		inline const Element_c& this_dref() const {
 			return static_cast<const Element_c&>(*this);
 		}
-		inline virtual Audible_c& audible() = 0;
-		inline const virtual Audible_c& audible() const = 0;
-		bool audibleValid() const = 0;
-	public:
+		inline Audible_c& audible() {
+			return this_dref().audible();
+		}
+		inline const Audible_c& audible() const {
+			return this_dref().audible();
+		}
+		inline bool audibleValid() const {
+			return this_dref().audibleValid();
+		}
 		
-	
+		float localVolume = 1.0;
+		float localPan = 0.0;
+		bool loop = false;
+		bool paused = false;
+		bool bypassPanShift = false;
+	public:
+		Container_c* parentContainer;
+		
+		Element_c& update_volume() {
+			if (audibleValid()) {
+				if (parentContainer) {
+					audible().setVolume(localVolume*parentContainer->masterVolume*100.0f);
+				} else {
+					audible().setVolume(localVolume*100.0f);
+				}
+			}
+			return this_dref();
+		}
+		Element_c& update_pan() {
+			if (audibleValid()){
+				if (!bypassPanShift && parentContainer && parentContainer->panShift != 0.0) {
+					audible().setPan(cos(acos(localPan) + parentContainer->panShift));
+				} else {
+					audible().setPan(localPan);
+				}
+			}
+			return this_dref();
+		}
+		Element_c& update_pause() {
+			if (audibleValid()) {
+				if (paused || (parentContainer && parentContainer->masterPaused)) {
+					audible().pause();
+				} else {
+					audible().play();
+				}
+			}
+			return this_dref();
+		}
+		Element_c& update_loop() {
+			if (audibleValid()) {
+				audible().setLooping(loop);
+			}
+			return this_dref();
+		}
+		Element_c& update() {
+			return this_dref().update();
+		}
+		sf::Time getDuration() const {
+			return this_dref().getDuration();
+		}
+		float getVolume() const {
+			return localVolume;
+		}
+		float getPan() const {
+			return localPan;
+		}
+		bool getBypassPanShift() const {
+			return bypassPanShift;
+		}
+		Element_c& setBypassPanShift(const bool& inputBypassPanShift = false) {
+			bypassPanShift = inputBypassPanShift;
+			update_pan();
+			return this_dref();
+		}
+		float getPitch() const {
+			if (audibleValid()) {
+				return audible().getPitch();
+			}
+			return this_dref();
+		}
+		bool isPlaying() const {
+			if (audibleValid()) {
+				return (audible().getStatus() == sf::Sound::Status::Playing);
+			}
+			return false;
+		}
+		bool isPaused() const {
+			return paused;
+		}
+		bool isStopped() const {
+			if (audibleValid()) {
+				return audible().getStatus() == sf::Sound::Status::Stopped;
+			}
+			return false;
+		}
+		bool isLooping() const {
+			return loop;
+		}
+		sf::Time getTimestamp() const {
+			if (audibleValid()) {
+				return audible().getPlayingOffset();
+			}
+			return sf::Time();
+		}
+		Element_c& setTimestamp(const sf::Time& inputTime) {
+			if (audibleValid()) {
+				audible().setPlayingOffset(inputTime);
+			}
+			return this_dref();
+		}
+		float getTimestamp_sec() const {
+			return getTimestamp().asSeconds();
+		}
+		float getTimestamp_ms() const {
+			return getTimestamp().asMilliseconds();
+		}
+		float getTimestamp_us() const {
+			return getTimestamp().asMicroseconds();
+		}
+		float getDuration_sec() const {
+			return this_dref().getDuration().asSeconds();
+		}
+		float getDuration_ms() const {
+			return this_dref().getDuration().asMilliseconds();
+		}
+		float getDuration_us() const {
+			return this_dref().getDuration().asMicroseconds();
+		}
+		Element_c& setTimestamp_sec(const float& inputTimestamp) {
+			setTimestamp(sf::seconds(inputTimestamp));
+			return this_dref();
+		}
+		Element_c& setTimestamp_ms(const float& inputTimestamp) {
+			setTimestamp(sf::milliseconds(inputTimestamp));
+			return this_dref();
+		}
+		Element_c& setTimestamp_us(const float& inputTimestamp) {
+			setTimestamp(sf::microseconds(inputTimestamp));
+			return this_dref();
+		}
+		Element_c& setVolume(const float inputLocalVolume = 1.0) {
+			localVolume = inputLocalVolume;
+			update_volume();
+			return this_dref();
+		}
+		Element_c& setPan(float inputPan = 0.0) {
+			inputPan = inputPan >= 1.0 ? 1.0 : inputPan;
+			inputPan = inputPan <= -1.0 ? -1.0 : inputPan;
+			localPan = inputPan;
+			update_pan();
+			return this_dref();
+		}
+		Element_c& setPitch(float inputPitch = 1.0) {
+			inputPitch *= inputPitch >= 0.0;
+			if (audibleValid()) {
+				audible().setPitch(inputPitch);
+			}
+			return this_dref();
+		}
+		Element_c& setPause(const bool& pauseNow) {
+			paused = pauseNow;
+			update_pause();
+			return this_dref();
+		}
+		Element_c& setLooping(const bool& loopNow) {
+			loop = loopNow;
+			update_loop();
+			return this_dref();
+		}
+		Element_c& pause() {
+			paused = true;
+			update_pause();
+			return this_dref();
+		}
+		Element_c& unpause() {
+			paused = false;
+			update_pause();
+			return this_dref();
+		}
+		Element_c& resume() {
+			unpause();
+			return this_dref();
+		}
+		Element_c& reset() {
+			if (audibleValid()) {
+				audible().stop();
+			}
+			setTimestamp_sec(0.0);
+			pause();
+			return this_dref();
+		}
+		Element_c& stop() {
+			if (audibleValid()) {
+				audible().stop();
+			}
+			return this_dref();
+		}
+		Element_c& replay() {
+			reset();
+			unpause();
+			if (audibleValid()) {
+				audible().play();
+			}
+			return this_dref();
+		}
+
+		AudibleElement(Container_c* inputParentContainer, const float& inputLocalVolume = 1.0, const bool& playNow = true, const bool& loopNow = false, const bool& inputBypassPanShift = false)
+			: parentContainer(inputParentContainer), localVolume(inputLocalVolume), paused(!playNow), loop(loopNow), bypassPanShift(inputBypassPanShift) {}
+		AudibleElement(const AudibleElement& other)
+			: parentContainer(other.parentContainer), localVolume(other.localVolume), paused(other.paused), loop(other.loop), bypassPanShift(other.bypassPanShift), localPan(other.localPan) {};
+		AudibleElement(AudibleElement&& other) noexcept
+			: parentContainer(other.parentContainer), localVolume(other.localVolume), paused(other.paused), loop(other.loop), bypassPanShift(other.bypassPanShift), localPan(other.localPan) {};
+		AudibleElement& operator=(const AudibleElement& other) {
+			parentContainer = other.parentContainer;
+			localVolume = other.localVolume;
+			localPan = other.localPan;
+			loop = other.loop;
+			paused = other.paused;
+			bypassPanShift = other.bypassPanShift;
+			return this_dref();
+		}
+		AudibleElement& operator=(AudibleElement&& other) noexcept {
+			parentContainer = other.parentContainer;
+			localVolume = other.localVolume;
+			localPan = other.localPan;
+			loop = other.loop;
+			paused = other.paused;
+			bypassPanShift = other.bypassPanShift;
+			return this_dref();
+		};
+		
 };
 template <typename Audible_c, typename Container_c, typename Element_c>
 class AudibleContainer : public TaggableContainer<Container_c, Element_c> {
+	friend AudibleElement<Audible_c, Container_c, Element_c>;
+	friend Element_c;
+	
 	protected:
+		float masterVolume = 1.0;
+		float panShift = 0.0;
+		bool masterPaused = false;
+		
 		inline Container_c& this_dref() {
 			return static_cast<Container_c&>(*this);
 		}
@@ -682,5 +924,111 @@ class AudibleContainer : public TaggableContainer<Container_c, Element_c> {
 			return static_cast<const Container_c&>(*this);
 		}
 	public:
+		unordered_map<string, Element_c>& event;
 		
+		Container_c& update_volume() {
+			for (pair<const string, Element_c>& currentEvent : event) {
+				event.at(currentEvent.first).update_volume();
+			}
+			return this_dref();
+		}
+		Container_c& update_loop() {
+			for (pair<const string, Element_c>& currentEvent : event) {
+				event.at(currentEvent.first).update_loop();
+			}
+			return this_dref();
+		}
+		Container_c& update_pause() {
+			for (pair<const string, Element_c>& currentEvent : event) {
+				event.at(currentEvent.first).update_pause();
+			}
+			return this_dref();
+		}
+		Container_c& update() {
+			for (pair<const string, Element_c>& currentEvent : event) {
+				event.at(currentEvent.first).update_loop();
+				event.at(currentEvent.first).update_volume();
+				event.at(currentEvent.first).update_pause();
+			}
+			return this_dref();
+		}
+		inline float getVolume() const {
+			return masterVolume;
+		}
+		inline bool isPlaying() const {
+			return !masterPaused;
+		}
+		inline bool isPaused() const {
+			return masterPaused;
+		}
+		inline bool exists(const string& inputID) const {
+			return event.count(inputID) != 0;
+		}
+		Container_c& update_pan() {
+			for (pair<const string, Element_c>& currentEvent : event) {
+				event.at(currentEvent.first).update_pan();
+			}
+			return this_dref();
+		}
+		float getPanShift(const bool& deg = true) const {
+			return panShift * (deg ? 180.0 / acos(-1.0) : 1.0);
+		}
+		Container_c& setPanShift(float inputFloat = 0.0, const bool& deg = true) {
+			panShift = fmod(inputFloat*(deg ? acos(-1.0)/180.0 : 1.0), 2*acos(-1.0));
+			update_pan();
+			return this_dref();
+		}
+		Container_c& setVolume(const float& inputMasterVolume) {
+			masterVolume = inputMasterVolume;
+			update_volume();
+			return this_dref();
+		}
+		Container_c& setPause(const bool& pauseNow) {
+			masterPaused = pauseNow;
+			update_pause();
+			return this_dref();
+		}
+		Container_c& pause() {
+			masterPaused = true;
+			return this_dref();
+		}
+		Container_c& unpause() {
+			masterPaused = false;
+			update_pause();
+			return this_dref();
+		}
+		Container_c& resume() {
+			unpause();
+			return this_dref();
+		}
+		Container_c& erase(const string& inputID) {
+			event.erase(inputID);
+			return this_dref();
+		}
+		Container_c& remove(const string& inputID) {
+			erase(inputID);
+			return this_dref();
+		}
+		Container_c& clear() {
+			event = unordered_map<string, Element_c>();
+			return this_dref();
+		}
+		Container_c& clean() {
+			for (pair<const string, Element_c>& currentEvent : event) {
+				if (event.at(currentEvent.first).isStopped()) {
+					erase(currentEvent.first);
+				}
+			}
+			return this_dref();
+		}
+		inline Element_c& operator[](const string& inputID) {
+			return event.at(inputID).this_dref();
+		}
+		inline const Element_c& operator[](const string& inputID) const {
+			return event.at(inputID).this_dref();
+		}
+		AudibleContainer(const float& inputMasterVolume = 1.0) : masterVolume(inputMasterVolume), event(this->taggables) {
+			masterVolume = masterVolume >= 1.0 ? 1.0 : masterVolume;
+			masterVolume *= masterVolume >= 0.0;
+		}
 };
