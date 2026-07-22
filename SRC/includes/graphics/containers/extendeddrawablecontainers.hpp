@@ -89,7 +89,7 @@ class ExtendedSprite : public DrawableElement<sf::Sprite, SpriteContainer, Exten
 			setTextureRect(sf::IntRect(sf::Vector2i({0, 0}), sf::Vector2i({static_cast<int>(textureSize.x), static_cast<int>(textureSize.y)})), alignDirection);
 			return *this;
 		}
-		inline ExtendedSprite(SpriteContainer* inputParentSpriteContainer, sf::Texture& inputTexture, double inputZ = 0) : DrawableElement(inputParentSpriteContainer, inputTexture, inputZ) {}
+		inline ExtendedSprite(SpriteContainer* inputParentSpriteContainer, const sf::Texture& inputTexture, double inputZ = 0) : DrawableElement(inputParentSpriteContainer, inputTexture, inputZ) {}
 		inline ExtendedSprite(SpriteContainer* inputParentSpriteContainer, sf::Sprite inputSprite, double inputZ = 0) : DrawableElement(inputParentSpriteContainer, inputSprite, inputZ) {}
 		
 		//  Copy and move stuff since static polymorphism is being stubborn about &sprite
@@ -112,7 +112,6 @@ class SpriteContainer : public DrawableContainer<sf::Sprite, SpriteContainer, Ex
 	friend ExtendedSprite;
 	
 	public:
-		unordered_map<string, ExtendedSprite> taggables;
 		unordered_map<string, ExtendedSprite>& extended_sprite;
 		
 		SpriteContainer(float inputInitialSizeMultiplier = 1.0) : extended_sprite(taggables), DrawableContainer(inputInitialSizeMultiplier) {}
@@ -510,7 +509,6 @@ class ExtendedText : public DrawableElement<sf::Text, TextContainer, ExtendedTex
 };
 class TextContainer : public DrawableContainer<sf::Text, TextContainer, ExtendedText> {
 	public:
-		unordered_map<string, ExtendedText> taggables;
 		unordered_map<string, ExtendedText>& extended_text;
 		
 		TextContainer(float inputInitialSizeMultiplier = 1.0) : extended_text(taggables), DrawableContainer(inputInitialSizeMultiplier) {}

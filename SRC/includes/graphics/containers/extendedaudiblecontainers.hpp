@@ -58,7 +58,7 @@ class SoundEvent : public AudibleElement<sf::Sound, SoundContainer, SoundEvent> 
 			return;
 		}
 		SoundEvent(const SoundEvent& other)
-			: parentSoundContainer(parentContainer), AudibleElement(other.parentContainer, other.localVolume, other.paused, other.loop, other.bypassPanShift)
+			: parentSoundContainer(parentContainer), AudibleElement(other)
 		{
 			if (this != &other) {
 				localPan = other.localPan;
@@ -71,7 +71,7 @@ class SoundEvent : public AudibleElement<sf::Sound, SoundContainer, SoundEvent> 
 			}
 		}
 		SoundEvent(SoundEvent&& other) noexcept
-			: parentSoundContainer(parentContainer), AudibleElement(other.parentContainer, other.localVolume, other.paused, other.loop, other.bypassPanShift)
+			: parentSoundContainer(parentContainer), AudibleElement(static_cast<SoundEvent&&>(other))
 		{
 			if (this != &other) {
 				if (other.sound) {
@@ -101,7 +101,7 @@ class SoundEvent : public AudibleElement<sf::Sound, SoundContainer, SoundEvent> 
 		SoundEvent& operator=(SoundEvent&& other) {
 			parentSoundContainer = parentContainer;
 			if (this != &other) {
-				AudibleElement::operator=(other);
+				AudibleElement::operator=(static_cast<SoundEvent&&>(other));
 				if (other.sound) {
 					sound = other.sound;
 					other.sound = nullptr;

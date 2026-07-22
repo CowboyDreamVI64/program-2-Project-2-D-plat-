@@ -132,7 +132,7 @@ namespace frame {
 				fstopwatches["accumulated_game_time"].subtract(1.0f/tps);
 				
 				
-				//  ---------- Backend Game Loop Starts Here ----------
+//  ------------------------------ Backend Game Loop Starts Here ------------------------------
 				//  This takes the default keybind inputs and passes them to the player entity.
 				player.receiveInput(game, defaultKeyBinds);
 				
@@ -148,20 +148,20 @@ namespace frame {
 				camera.setInViewport(game, sprites["player"], player.position, {1.0, 2.0});
 				//  The sky sprite renders with its center at (32, 18) and its size being 64 x 36.
 				camera.setInViewport(game, sprites["sky"], {32.0, 18.0}, {64, 36});
-				//  ---------- Backend Game Loop Ends Here ----------
+//  ------------------------------ Backend Game Loop Ends Here ------------------------------
 				
 				
-				//  ---------- Frontend Game Loop Starts Here ----------
+//  ------------------------------ Frontend Game Loop Starts Here ------------------------------
 				if (player.is_jumping_triggered) {
 					sound_lists["jump"].add(sound_buffers["jump"], 0.4f, 0.0f, 1.0, 1.0, true);
 				}
-				//  ---------- Frontend Game Loop Ends Here ----------
+//  ------------------------------ Frontend Game Loop Ends Here ------------------------------
 				
 				
 			}
 			
 			
-			//  ---------- Frontend Program Loop Starts Here ----------	
+//  ------------------------------ Frontend Program Loop Starts Here ------------------------------	
 			//  This clears the "jump" sound list of inactive sounds.
 			if (sound_lists["jump"].inactive()) {
 				sound_lists["jump"].clean();
@@ -171,8 +171,7 @@ namespace frame {
 			
 			//  This renders sprites onto the window (leave this true here).
 			game.refresh(true, sprites);
-			//  ---------- Frontend Program Loop Ends Here ----------
-			
+//  ------------------------------ Frontend Program Loop Ends Here ------------------------------
 			
 		}
 		

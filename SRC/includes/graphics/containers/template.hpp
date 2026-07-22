@@ -45,18 +45,22 @@ class TaggableContainer {
 		}
 	public:
 		unordered_map<string, Element_c> taggables;
-		Container_c& remove(const string& inputID) {
-			this_dref().taggables.erase(inputID);
-			return this_dref();
-		}
-		bool exists(const string& inputID) {
-			return this_dref().taggables.count(inputID) != 0;
-		}
-		Container_c& clear() {
-			this_dref().taggables = unordered_map<string, Element_c>();
-			return this_dref();
-		}
 		
+		inline Container_c& erase(const string& inputID) {
+			taggables.erase(inputID);
+			return this_dref();
+		}
+		inline Container_c& remove(const string& inputID) {
+			taggables.erase(inputID);
+			return this_dref();
+		}
+		inline bool exists(const string& inputID) {
+			return taggables.count(inputID) != 0;
+		}
+		inline Container_c& clear() {
+			taggables = unordered_map<string, Element_c>();
+			return this_dref();
+		}
 		vector<string> get_ids_with_all_tags(const vector<string>& inputTags = vector<string>()) const {
 			vector<string> outputIDs;
 			for (const auto& pair : this_dref().taggables) {
@@ -138,6 +142,19 @@ class TaggableContainer {
 				}
 			}
 			return outputIDs;
+		}
+
+		inline Element_c& at(const string& inputID) {
+			return taggables.at(inputID);
+		}
+		inline const Element_c& at(const string& inputID) const {
+			return taggables.at(inputID);
+		}
+		inline Element_c& operator[](const string& inputID) {
+			return at(inputID);
+		}
+		inline const Element_c& operator[](const string& inputID) const {
+			return at(inputID);
 		}
 };
 
@@ -456,6 +473,13 @@ class DrawableElement : public TaggableElement<Element_c> {
 			}
 			return false;
 		}
+		
+		inline operator Drawable_c&() & {
+			return d;
+		}
+		inline operator const Drawable_c&() const & {
+			return d;
+		}
 
 		template <typename dConstructorT>
 		DrawableElement(Container_c* inputParentContainer, const dConstructorT& inputDConstructor, double inputZ = 0) : z(inputZ), d(inputDConstructor), parentContainer(inputParentContainer) {}
@@ -496,10 +520,10 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 		float initialSizeMultiplier;
 		
 		inline unordered_map<string, Element_c>& extended_drawable() {
-			return this_dref().taggables;
+			return this->taggables;
 		}
 		inline const unordered_map<string, Element_c>& extended_drawable() const {
-			return this_dref().taggables;
+			return this->taggables;
 		}
 		
 		inline Container_c& setMultiplier(float inputInitialSizeMultiplier) {
@@ -512,24 +536,10 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 		}
 		
 		template <typename dConstructorT>
-		Element_c& add(const string& inputID, dConstructorT& inputDConstructor, const double& inputZ = 0) {
+		Element_c& add(const string& inputID, const dConstructorT& inputDConstructor, const double& inputZ = 0) {
 			extended_drawable().insert_or_assign(inputID, Element_c(&this_dref(), inputDConstructor, inputZ));
 			extended_drawable().at(inputID).multiply(initialSizeMultiplier, Align::TopLeft);
 			return extended_drawable().at(inputID);
-		}
-		
-		inline Container_c& remove(const string& inputID) {
-			extended_drawable().erase(inputID);
-			return this_dref();
-		}
-		
-		inline bool exists(const string& inputID) const {
-			return extended_drawable().count(inputID) != 0;
-		}
-		
-		inline Container_c& clear() {
-			extended_drawable() = unordered_map<string, Element_c>();
-			return this_dref();
 		}
 		
 		double highest() const {
@@ -650,14 +660,6 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 				outputShaders.push_back(currentDrawable->shader);
 			}
 			return outputShaders;
-		}
-		
-		inline Element_c& operator[](const string& inputID) {
-			return extended_drawable().at(inputID).this_dref();
-		}
-		
-		inline const Element_c& operator[](const string& inputID) const {
-			return extended_drawable().at(inputID).this_dref();
 		}
 		
 		DrawableContainer(float inputInitialSizeMultiplier = 1.0) : initialSizeMultiplier(inputInitialSizeMultiplier) {}
@@ -880,7 +882,14 @@ class AudibleElement : public TaggableElement<Element_c> {
 			}
 			return this_dref();
 		}
-
+	
+		inline operator Audible_c&() & {
+			return audible();
+		}
+		inline operator const Audible_c&() const & {
+			return audible();
+		}
+		
 		AudibleElement(Container_c* inputParentContainer, const float& inputLocalVolume = 1.0, const bool& playNow = true, const bool& loopNow = false, const bool& inputBypassPanShift = false)
 			: parentContainer(inputParentContainer), localVolume(inputLocalVolume), paused(!playNow), loop(loopNow), bypassPanShift(inputBypassPanShift) {}
 		AudibleElement(const AudibleElement& other)
@@ -961,9 +970,6 @@ class AudibleContainer : public TaggableContainer<Container_c, Element_c> {
 		inline bool isPaused() const {
 			return masterPaused;
 		}
-		inline bool exists(const string& inputID) const {
-			return event.count(inputID) != 0;
-		}
 		Container_c& update_pan() {
 			for (pair<const string, Element_c>& currentEvent : event) {
 				event.at(currentEvent.first).update_pan();
@@ -1001,18 +1007,6 @@ class AudibleContainer : public TaggableContainer<Container_c, Element_c> {
 			unpause();
 			return this_dref();
 		}
-		Container_c& erase(const string& inputID) {
-			event.erase(inputID);
-			return this_dref();
-		}
-		Container_c& remove(const string& inputID) {
-			erase(inputID);
-			return this_dref();
-		}
-		Container_c& clear() {
-			event = unordered_map<string, Element_c>();
-			return this_dref();
-		}
 		Container_c& clean() {
 			for (pair<const string, Element_c>& currentEvent : event) {
 				if (event.at(currentEvent.first).isStopped()) {
@@ -1021,14 +1015,169 @@ class AudibleContainer : public TaggableContainer<Container_c, Element_c> {
 			}
 			return this_dref();
 		}
-		inline Element_c& operator[](const string& inputID) {
-			return event.at(inputID).this_dref();
-		}
-		inline const Element_c& operator[](const string& inputID) const {
-			return event.at(inputID).this_dref();
-		}
+		
 		AudibleContainer(const float& inputMasterVolume = 1.0) : masterVolume(inputMasterVolume), event(this->taggables) {
 			masterVolume = masterVolume >= 1.0 ? 1.0 : masterVolume;
 			masterVolume *= masterVolume >= 0.0;
 		}
+};
+
+template <typename Resource_c, typename Container_c, typename Element_c>
+class ResourceElement : public TaggableElement<Element_c> {
+	friend ResourceContainer<Resource_c, Container_c, Element_c>;
+	
+	public:
+		Resource_c* r;
+	protected:
+		inline Element_c& this_dref() {
+			return static_cast<Element_c&>(*this);
+		}
+		inline const Element_c& this_dref() const {
+			return static_cast<const Element_c&>(*this);
+		}
+	public:
+		Container_c* parentContainer;
+		
+		Element_c& load(const Resource_c& inputResource) {
+			if (r) {
+				delete r;
+				r = nullptr;
+			}
+			r = new Resource_c(inputResource);
+			return this_dref();
+		}
+		inline Element_c& loadFromFile(const string& inputFileDirectory) {
+			if (r && r->loadFromFile(inputFileDirectory)) {}
+			
+			return this_dref();
+		}
+		inline Element_c& loadFromMemory(const unsigned char* data, const size_t& size) {
+			if (r && r->loadFromMemory(data, size)) {}
+			
+			return this_dref();
+		}
+		inline Element_c& open(const Resource_c& inputResource) {
+			return load(inputResource);
+		}
+		inline Element_c& openFromFile(const string& inputFileDirectory) {
+			return loadFromFile(inputFileDirectory);
+		}
+		inline Element_c& openFromMemory(const unsigned char* data, const size_t& size) {
+			return loadFromMemory(data, size);
+		}
+		Element_c& unload() {
+			if (r) {
+				delete r;
+				r = nullptr;
+			}
+			
+			return this_dref();
+		}
+		
+		inline operator Resource_c&() & {
+			return *r;
+		}
+		inline operator const Resource_c&() const & {
+			return *r;
+		}
+		
+		template <typename dConstructorT>
+		ResourceElement(Container_c* inputParentContainer, const dConstructorT& inputDConstructor) : parentContainer(inputParentContainer) {
+			r = new Resource_c(inputDConstructor);
+			return;
+		}
+		ResourceElement(Container_c* inputParentContainer, const unsigned char* data, const size_t& size) : parentContainer(inputParentContainer) {
+			r = new Resource_c(data, size);
+			return;
+		}
+		ResourceElement(Container_c* inputParentContainer) : parentContainer(inputParentContainer) {
+			r = nullptr;
+			return;
+		}
+		~ResourceElement() {
+			delete r;
+			r = nullptr;
+			return;
+		}
+		ResourceElement(Element_c& other) : parentContainer(other.parentContainer) {
+			if (this != &other) {
+				if (r) {
+					delete r;
+					r = nullptr;
+				}
+				if (other.r) {
+					r = new Resource_c(*other.r);
+				}
+			}
+		}
+		ResourceElement& operator=(Element_c& other) {
+			if (this != &other) {
+				if (r) {
+					delete r;
+					r = nullptr;
+				}
+				if (other.r) {
+					r = new Resource_c(*other.r);
+				}
+			}
+			parentContainer = other.parentContainer;
+			return this_dref();
+		}
+		ResourceElement(Element_c&& other) noexcept : r(other.r), parentContainer(other.parentContainer) {
+			if (this != &other) {
+				other.r = nullptr;
+			}
+		}
+		ResourceElement& operator=(Element_c&& other) noexcept {
+			if (this != &other) {
+				r = other.r;
+				other.r = nullptr;
+			}
+			parentContainer = other.parentContainer;
+			return this_dref();
+		}
+
+};
+template <typename Resource_c, typename Container_c, typename Element_c>
+class ResourceContainer : public TaggableContainer<Container_c, Element_c> {
+	protected:
+		inline Container_c& this_dref() {
+			return static_cast<Container_c&>(*this);
+		}
+		inline const Container_c& this_dref() const {
+			return static_cast<const Container_c&>(*this);
+		}
+	public:
+		ResourceContainer& clean() {
+			for (pair<const string, Element_c>& currentResource : this->taggables) {
+				if (!this->taggables.at(currentResource.first).r) {
+					erase(currentResource.first);
+				}
+			}
+			return *this;
+		}
+		
+		ResourceContainer& load(const std::string& inputID, const Resource_c& inputResource) {
+			this->taggables.insert_or_assign(inputID, Element_c(&this_dref(), inputResource));
+			return *this;
+		}
+		ResourceContainer& loadFromFile(const std::string& inputID, const std::string& fileDirectory) {
+			this->taggables.insert_or_assign(inputID, Element_c(&this_dref(), fileDirectory));
+			return *this;
+		}
+		ResourceContainer& loadFromMemory(const std::string& inputID, const unsigned char* data, const size_t& size) {
+			this->taggables.insert_or_assign(inputID, Element_c(&this_dref(), data, size));
+			return *this;
+		}
+		ResourceContainer& open(const std::string& inputID, const sf::Font& inputFont) {
+			return load(inputID, inputFont);
+		}
+		ResourceContainer& openFromFile(const std::string& inputID, const std::string& fileDirectory) {
+			return loadFromFile(inputID, fileDirectory);
+		}
+		ResourceContainer& openFromMemory(const std::string& inputID, const unsigned char* data, const size_t& size) {
+			return loadFromMemory(inputID, data, size);
+		}
+		
+		ResourceContainer() {}
 };

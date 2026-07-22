@@ -10,6 +10,10 @@ template <typename Audible_c, typename Container_c, typename Element_c>
 class AudibleElement;
 template <typename Audible_c, typename Container_c, typename Element_c>
 class AudibleContainer;
+template <typename Resource_c, typename Container_c, typename Element_c>
+class ResourceElement;
+template <typename Resource_c, typename Container_c, typename Element_c>
+class ResourceContainer;
 
 class ExtendedWindow;
 class SpriteContainer;
