@@ -37,6 +37,7 @@ namespace frame {
 		//  This loads textures in the format {textureID, fileDirectory}.
 		loadAllTextures(textures, {
 			{"player", "assets/textures/player.png"},
+			{"goblin", "assets/textures/Goblin.png"},
 			{"sky", "assets/textures/sky.png"}
 		});
 		
@@ -81,7 +82,7 @@ namespace frame {
 		fstopwatches.start("accumulated_game_time");
 		
 		//  This adds a player sprite and a sky sprite.
-		sprites.add("player", textures["player"], 0.0);
+		sprites.add("player", textures["goblin"], 0.0);
 		sprites.add("sky", textures["sky"], -1.0);
 		
 		//  This adds a new sound list to push sounds into called "jump."
@@ -139,6 +140,11 @@ namespace frame {
 				//  This ticks the movement physics of the player entity.
 				player.tickPhysics(tps);
 				
+				
+//  ------------------------------ Backend Game Loop Ends Here ------------------------------
+				
+				
+//  ------------------------------ Frontend Game Loop Starts Here ------------------------------
 				//  This centers the camera position to the player position without the camera clipping out of bounds.
 				camera.position.x = player.position.x < camera.getPerceivedDimensions(game.resolution).x/2 ? camera.getPerceivedDimensions(game.resolution).x/2 : player.position.x;
 				camera.position.y = player.position.y < camera.getPerceivedDimensions(game.resolution).y/2 ? camera.getPerceivedDimensions(game.resolution).y/2 : player.position.y;
@@ -146,14 +152,11 @@ namespace frame {
 				//  These resize and reposition the player and sky sprites to be able to render properly in the viewport.
 				//  The player sprite renders with its center at player.position and its size being 1 x 2.
 				camera.setInViewport(game, sprites["player"], player.position, {1.0, 2.0});
+				
 				//  The sky sprite renders with its center at (32, 18) and its size being 64 x 36.
 				camera.setInViewport(game, sprites["sky"], {32.0, 18.0}, {64, 36});
-//  ------------------------------ Backend Game Loop Ends Here ------------------------------
-				
-				
-//  ------------------------------ Frontend Game Loop Starts Here ------------------------------
-				if (player.is_jumping_triggered) {
-					sound_lists["jump"].add(sound_buffers["jump"], 0.4f, 0.0f, 1.0, 1.0, true);
+				if (player.is_jumping_triggered()) {
+					sound_lists["jump"].add(sound_buffers["jump"], 0.4f, 0.0f, 1, 1.0, true);
 				}
 //  ------------------------------ Frontend Game Loop Ends Here ------------------------------
 				

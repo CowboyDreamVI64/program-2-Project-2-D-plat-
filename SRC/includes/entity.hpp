@@ -27,31 +27,69 @@ class Entity {
 		double maxSpeed = 0.0;
 	public:
 		//  Read-only versions of the boolean checks above.
-		const bool& up = UP;
-		const bool& left = LEFT;
-		const bool& down = DOWN;
-		const bool& right = RIGHT;
-		const bool& jump = JUMP;
-		const bool& sprint = SPRINT;
-		
-		const bool& up_triggered = UP_TRIGGERED;
-		const bool& left_triggered = LEFT_TRIGGERED;
-		const bool& down_triggered = DOWN_TRIGGERED;
-		const bool& right_triggered = RIGHT_TRIGGERED;
-		const bool& jump_triggered = JUMP_TRIGGERED;
-		const bool& sprint_triggered = SPRINT_TRIGGERED;
-		
-		const bool& onGround = ON_GROUND;
-		const bool& isJumping = IS_JUMPING;
-		const bool& is_sprinting = IS_SPRINTING;
-		const size_t& jumpFrames = JUMP_BUFFER;
-		
-		const bool& on_ground_triggered = ON_GROUND_TRIGGERED;
-		const bool& is_jumping_triggered = IS_JUMPING_TRIGGERED;
-		const bool& is_sprinting_triggered = IS_SPRINTING_TRIGGERED;
-		
-		const bool& isSkidding = IS_SKIDDING;
-		const bool& is_skidding_triggered = IS_SKIDDING_TRIGGERED;
+		inline bool up() const {
+			return UP;
+		}
+		inline bool left() const {
+			return LEFT;
+		}
+		inline bool down() const {
+			return DOWN;
+		}
+		inline bool right() const {
+			return RIGHT;
+		}
+		inline bool jump() const {
+			return JUMP;
+		}
+		inline bool sprint() const {
+			return SPRINT;
+		}
+		inline bool up_triggered() const {
+			return UP_TRIGGERED;
+		}
+		inline bool left_triggered() const {
+			return LEFT_TRIGGERED;
+		}
+		inline bool down_triggered() const {
+			return DOWN_TRIGGERED;
+		}
+		inline bool right_triggered() const {
+			return RIGHT_TRIGGERED;
+		}
+		inline bool jump_triggered() const {
+			return JUMP_TRIGGERED;
+		}
+		inline bool sprint_triggered() const {
+			return SPRINT_TRIGGERED;
+		}
+		inline bool onGround() const {
+			return ON_GROUND;
+		}
+		inline bool isJumping() const {
+			return IS_JUMPING;
+		}
+		inline bool is_sprinting() const {
+			return IS_SPRINTING;
+		}
+		inline size_t jumpFrames() const {
+			return JUMP_BUFFER;
+		}
+		inline bool on_ground_triggered() const {
+			return ON_GROUND_TRIGGERED;
+		}
+		inline bool is_jumping_triggered() const {
+			return IS_JUMPING_TRIGGERED;
+		}
+		inline bool is_sprinting_triggered() const {
+			return IS_SPRINTING_TRIGGERED;
+		}
+		inline bool isSkidding() const {
+			return IS_SKIDDING;
+		}
+		inline bool is_skidding_triggered() const {
+			return IS_SKIDDING_TRIGGERED;
+		}
 		
 		Vec2 hitbox;
 		Vec2 acceleration_const;
@@ -185,7 +223,7 @@ class Entity {
 			IS_SPRINTING_TRIGGERED = false;
 			
 			//  Sets the jump buffer to the max if the entity inputted jump; else, decrements the jump buffer.
-			if (jump_triggered) {
+			if (JUMP_TRIGGERED) {
 				JUMP_BUFFER = maxJumpBufferFrames;
 			} else if (JUMP_BUFFER > 0) {
 				--JUMP_BUFFER;
@@ -193,7 +231,7 @@ class Entity {
 			
 			
 			//  Checks if the player can actually sprint
-			if (sprint && (left || right)) {
+			if (SPRINT && (LEFT || RIGHT)) {
 				if (!IS_SPRINTING) {
 					IS_SPRINTING_TRIGGERED = true;
 				}
@@ -203,11 +241,11 @@ class Entity {
 			}
 			
 			//  Sets the maximum move speed of the entity based on the sprint speed multiplier.
-			maxSpeed = speed * (is_sprinting ? sprintSpeedMultiplier : 1.0);
+			maxSpeed = speed * (IS_SPRINTING ? sprintSpeedMultiplier : 1.0);
 			
 			
-			if (jump) {
-				if (onGround && (autoJump || jump_triggered || jumpFrames != 0)) {
+			if (JUMP) {
+				if (ON_GROUND && (autoJump || JUMP_TRIGGERED || JUMP_BUFFER != 0)) {
 					IS_JUMPING_TRIGGERED = true;
 					
 					//  True if the entity is in a jump at the moment.
@@ -223,34 +261,34 @@ class Entity {
 			
 			//  True if the player starts skidding.
 			IS_SKIDDING_TRIGGERED = false;
-			if (onGround && ((left && !right && velocity.x > speed*1.05) || (right && !left && velocity.x < -speed*1.05))) {
+			if (ON_GROUND && ((LEFT && !RIGHT && velocity.x > speed*1.05) || (RIGHT && !LEFT && velocity.x < -speed*1.05))) {
 				if (!IS_SKIDDING) {
 					IS_SKIDDING_TRIGGERED = true;
 				}
 				//  True if the player is currently skidding.
 				IS_SKIDDING = true;
-			} else if (!onGround || ((left && !right && velocity.x > 0.0) || (right && !left && velocity.x < 0.0))) {
+			} else if (!ON_GROUND || ((LEFT && !RIGHT && velocity.x > 0.0) || (RIGHT && !LEFT && velocity.x < 0.0))) {
 				IS_SKIDDING = false;
 			}
 			
 			//  Math and control structures that control how to apply speed to velocity.
 			if (!snapToSpeed || velocity.x_abs() > maxSpeed) {
-				if (left && !right && velocity.x > -maxSpeed) {
+				if (LEFT && !RIGHT && velocity.x > -maxSpeed) {
 					//  This pushes the player leftwards.
-					acceleration.x -= (isSkidding ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(onGround ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
+					acceleration.x -= (IS_SKIDDING ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(ON_GROUND ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
 				}
-				if (right && !left && velocity.x < maxSpeed) {
+				if (RIGHT && !LEFT && velocity.x < maxSpeed) {
 					//  This pushes the player rightwards.
-					acceleration.x += (isSkidding ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(onGround ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
+					acceleration.x += (IS_SKIDDING ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(ON_GROUND ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
 				}
 			} else {
 				//  If the player's speed snaps, this sets their speed to 0.0 when they are below their maximum speed.
 				velocity.x = 0.0;
-				if (left && !right) {
+				if (LEFT && !RIGHT) {
 				//  If the player's speed snaps, this sets their speed to max towards the left.
 					velocity.x = -maxSpeed;
 				}
-				if (right && !left) {
+				if (RIGHT && !LEFT) {
 				//  If the player's speed snaps, this sets their speed to max towards the right.
 					velocity.x = maxSpeed;
 				}
@@ -258,7 +296,7 @@ class Entity {
 			
 			
 			//  Applies a multiplier to gravity when the player is jumping.
-			if (isJumping && velocity.y > 0) {
+			if (IS_JUMPING && velocity.y > 0) {
 				acceleration -= (Vec2(1.0) - accelerationConstJumpingMultiplier)*acceleration_const;
 			}
 			
@@ -267,11 +305,11 @@ class Entity {
 			
 			//  This modifies velocity to account for friction and drag.
 			if (velocity.x_abs() > maxSpeed*0.6/TPS) {
-				velocity.x *= exp(-frictionCoefficient*(onGround ? 1.0 : frictionCoefficientAirMultiplier)/TPS);
+				velocity.x *= exp(-frictionCoefficient*(ON_GROUND ? 1.0 : frictionCoefficientAirMultiplier)/TPS);
 			} else {
 				velocity.x = 0.0;
 			}
-			velocity.y *= exp(-dragCoefficient*(isJumping && velocity.y > 0 ? dragCoefficientJumpingMultiplier : 1.0)/TPS);
+			velocity.y *= exp(-dragCoefficient*(IS_JUMPING && velocity.y > 0 ? dragCoefficientJumpingMultiplier : 1.0)/TPS);
 			
 			//  This applies velocity to position.acceleration_const
 			position += velocity/TPS;

@@ -20,4 +20,4 @@ struct KeyBind {
 	}
 };
 //  This is a default set of keybinds (WASD, space to jump, shift to sprint)
-KeyBind defaultKeyBinds{sf::Keyboard::Key::W, sf::Keyboard::Key::A, sf::Keyboard::Key::S, sf::Keyboard::Key::D, sf::Keyboard::Key::Space, sf::Keyboard::Key::LShift};
+KeyBind defaultKeyBinds{sf::Keyboard::Key::W, sf::Keyboard::Key::A, sf::Keyboard::Key::S, sf::Keyboard::Key::D, sf::Keyboard::Key::W, sf::Keyboard::Key::LShift};
