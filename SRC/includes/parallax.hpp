@@ -42,8 +42,8 @@ struct ParallaxInstruction {
 			}
 			return absoluteApparentPosition + loopFactor;
 		}
-		inline Vec2 getActualPosition(const Vec2& inputOffset) const {
-			return getApparentPosition(inputOffset)*distance;
+		inline Vec2 getActualPosition() const {
+			return actualPosition;
 		}
 		inline sf::Vector2u getGridSize() const {
 			return gridSize;
@@ -88,7 +88,7 @@ struct ParallaxInstruction {
 			}
 			sf::Texture gridTexture = sf::Texture(gridImage);
 			
-			gridTextureID = "[ParallaxInstructionGridTexture].baseTextureID == \"" + baseTextureID + "\"";
+			gridTextureID = "[ParallaxInstructionGridTexture];sprite:\"" + spriteID + "\",baseTextureID:\"" + baseTextureID + "\";[\\ParallaxInstructionGridTexture]";
 			
 			if (textures.exists(gridTextureID)) {
 				textures.erase(gridTextureID);

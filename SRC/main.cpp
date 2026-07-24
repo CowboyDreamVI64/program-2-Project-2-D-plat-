@@ -42,6 +42,7 @@ namespace frame {
 			{"ground", "assets/textures/ground.png"},
 			{"hills1", "assets/textures/hills1.png"},
 			{"hills2", "assets/textures/hills2.png"},
+			{"clouds", "assets/textures/clouds.png"},
 			{"mountains", "assets/textures/mountains.png"},
 			{"sun", "assets/textures/sun.png"}
 		});
@@ -91,9 +92,11 @@ namespace frame {
 		sprites.add("ground", textures["ground"], 1.0);
 		sprites.add("hills1", textures["hills1"], -1.0);
 		sprites.add("hills2", textures["hills2"], -2.0);
-		sprites.add("mountains", textures["mountains"], -3.0);
-		sprites.add("sun", textures["sun"], -4.0);
-		sprites.add("sky", textures["sky"], -5.0);
+		sprites.add("clouds1", textures["clouds"], -3.0).setOpacity(0.85);
+		sprites.add("mountains", textures["mountains"], -4.0);
+		sprites.add("clouds2", textures["clouds"], -5.0).setOpacity(0.4);
+		sprites.add("sun", textures["sun"], -6.0);
+		sprites.add("sky", textures["sky"], -7.0);
 		
 		//  This adds a new sound list to push sounds into called "jump."
 		sound_lists.add("jump");
@@ -111,9 +114,11 @@ namespace frame {
 			ParallaxInstruction("ground", "ground", 1, {1, 1}, 0.0, true, false).setApparentPosition({0.5, 0.2}, camera.position).fitLoopToViewPort(camera),
 			ParallaxInstruction("hills1", "hills1", 5, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera),
 			ParallaxInstruction("hills2", "hills2", 10, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("clouds1", "clouds", 12, {48, 21.6}, 0.0, true, true).setApparentPosition({16, 10.8}, camera.position).fitLoopToViewPort(camera),
 			ParallaxInstruction("mountains", "mountains", 35, {48, 27}, 0.0, true, false).setApparentPosition({24, 13.5}, camera.position).fitLoopToViewPort(camera),
-			ParallaxInstruction("sun", "sun", 45, {12, 12}, 0.0, false, false).setApparentPosition({8, 12}, camera.position).fitLoopToViewPort(camera),
-			ParallaxInstruction("sky", "sky", 60, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera)
+			ParallaxInstruction("clouds2", "clouds", 45, {24, 10.8}, 0.0, true, true).setApparentPosition({12, 5.4}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("sun", "sun", 200, {12, 12}, 0.0, false, false).setApparentPosition({8, 12}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("sky", "sky", 500, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera)
 		};
 		
 		//  This creates a player entity.
@@ -145,7 +150,7 @@ namespace frame {
 			}
 			
 			//  This advances the accumulated game time by the delta of the framerate.
-			fstopwatches["accumulated_game_time"].add(1.0f/game.framerate);
+			fstopwatches.elapse(1.0f/game.framerate);
 			
 			//  This ticks the game physics depending on how much accumulated game time there is.
 			while (fstopwatches["accumulated_game_time"].frame >= 1.0f/tps) {
@@ -158,8 +163,6 @@ namespace frame {
 				
 				//  This ticks the movement physics of the player entity.
 				player.tickPhysics(tps);
-				
-				
 //  ------------------------------ Backend Game Loop Ends Here ------------------------------
 				
 				
@@ -167,6 +170,9 @@ namespace frame {
 				if (player.is_jumping_triggered()) {
 					sound_lists["jump"].add(sound_buffers["jump"], 0.4f, 0.0f, 1, 1.0, true);
 				}
+				
+				parallaxSprites[3].setActualPosition(parallaxSprites[3].getActualPosition() + Vec2(2, 0)/tps);
+				parallaxSprites[5].setActualPosition(parallaxSprites[5].getActualPosition() + Vec2(2, 0)/tps);
 //  ------------------------------ Frontend Game Loop Ends Here ------------------------------
 				
 				

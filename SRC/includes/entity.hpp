@@ -365,6 +365,13 @@ class Entity {
 				ON_GROUND = true;
 			}
 			
+			if (position.x < -0.3 + hitbox.x/2) {
+				position.x = -0.3 + hitbox.x/2;
+				if (velocity.x < 0) {
+					velocity.x = 0;
+				}
+			}
+			
 			return *this;
 		}
 	
