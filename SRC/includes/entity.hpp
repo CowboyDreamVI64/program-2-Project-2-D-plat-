@@ -22,7 +22,12 @@ class Entity {
 		bool IS_SPRINTING_TRIGGERED = false;
 		bool IS_SKIDDING = false;
 		bool IS_SKIDDING_TRIGGERED = false;
+		bool IS_CROUCHING = false;
+		bool IS_CROUCHING_TRIGGERED = false;
+		bool IS_UNCROUCHING_TRIGGERED = false;
 		size_t JUMP_BUFFER = 0;
+		
+		Vec2 hitbox;
 		
 		double maxSpeed = 0.0;
 	public:
@@ -63,16 +68,16 @@ class Entity {
 		inline bool sprint_triggered() const {
 			return SPRINT_TRIGGERED;
 		}
-		inline bool onGround() const {
+		inline bool on_ground() const {
 			return ON_GROUND;
 		}
-		inline bool isJumping() const {
+		inline bool is_jumping() const {
 			return IS_JUMPING;
 		}
 		inline bool is_sprinting() const {
 			return IS_SPRINTING;
 		}
-		inline size_t jumpFrames() const {
+		inline size_t jump_frames() const {
 			return JUMP_BUFFER;
 		}
 		inline bool on_ground_triggered() const {
@@ -84,14 +89,23 @@ class Entity {
 		inline bool is_sprinting_triggered() const {
 			return IS_SPRINTING_TRIGGERED;
 		}
-		inline bool isSkidding() const {
+		inline bool is_skidding() const {
 			return IS_SKIDDING;
 		}
 		inline bool is_skidding_triggered() const {
 			return IS_SKIDDING_TRIGGERED;
 		}
+		inline bool is_crouching() const {
+			return IS_CROUCHING;
+		}
+		inline bool is_crouching_triggered() const {
+			return IS_CROUCHING_TRIGGERED;
+		}
+		inline bool is_uncrouching_triggered() const {
+			return IS_UNCROUCHING_TRIGGERED;
+		}
 		
-		Vec2 hitbox;
+		Vec2 baseHitbox;
 		Vec2 acceleration_const;
 		Vec2 acceleration = {0.0, 0.0};
 		Vec2 velocity = {0.0, 0.0};
@@ -149,6 +163,29 @@ class Entity {
 			RIGHT_TRIGGERED = false;
 			JUMP_TRIGGERED = false;
 			SPRINT_TRIGGERED = false;
+			IS_CROUCHING_TRIGGERED = false;
+			IS_UNCROUCHING_TRIGGERED = false;
+			
+			if (ON_GROUND) {
+				if (DOWN) {
+					if (!IS_CROUCHING) {
+						IS_CROUCHING_TRIGGERED = true;
+					}
+					IS_CROUCHING = true;
+				} else {
+					if (IS_CROUCHING) {
+						IS_UNCROUCHING_TRIGGERED = true;
+					}
+					IS_CROUCHING = false;
+				}
+			}
+			
+			hitbox = baseHitbox * Vec2(1.0, 1.0 - 0.5*IS_CROUCHING);
+			if (IS_CROUCHING_TRIGGERED) {
+				position.y -= baseHitbox.y/4;
+			} else if (IS_UNCROUCHING_TRIGGERED) {
+				position.y += baseHitbox.y/4;
+			}
 			
 			if (booleans[0]) {
 				if (!UP) {
@@ -231,7 +268,7 @@ class Entity {
 			
 			
 			//  Checks if the player can actually sprint
-			if (SPRINT && (LEFT || RIGHT)) {
+			if (SPRINT && (LEFT || RIGHT) && !(IS_CROUCHING && ON_GROUND)) {
 				if (!IS_SPRINTING) {
 					IS_SPRINTING_TRIGGERED = true;
 				}
@@ -261,34 +298,34 @@ class Entity {
 			
 			//  True if the player starts skidding.
 			IS_SKIDDING_TRIGGERED = false;
-			if (ON_GROUND && ((LEFT && !RIGHT && velocity.x > speed*1.05) || (RIGHT && !LEFT && velocity.x < -speed*1.05))) {
+			if (ON_GROUND && ((LEFT && !RIGHT && !(IS_CROUCHING && ON_GROUND) && velocity.x > speed*1.05) || (RIGHT && !LEFT && !(IS_CROUCHING && ON_GROUND) && velocity.x < -speed*1.05))) {
 				if (!IS_SKIDDING) {
 					IS_SKIDDING_TRIGGERED = true;
 				}
 				//  True if the player is currently skidding.
 				IS_SKIDDING = true;
-			} else if (!ON_GROUND || ((LEFT && !RIGHT && velocity.x > 0.0) || (RIGHT && !LEFT && velocity.x < 0.0))) {
+			} else if (!ON_GROUND || ((LEFT && !RIGHT && !(IS_CROUCHING && ON_GROUND) && velocity.x > 0.0) || (RIGHT && !LEFT && !(IS_CROUCHING && ON_GROUND) && velocity.x < 0.0))) {
 				IS_SKIDDING = false;
 			}
 			
 			//  Math and control structures that control how to apply speed to velocity.
 			if (!snapToSpeed || velocity.x_abs() > maxSpeed) {
-				if (LEFT && !RIGHT && velocity.x > -maxSpeed) {
+				if (LEFT && !RIGHT && !(IS_CROUCHING && ON_GROUND) && velocity.x > -maxSpeed) {
 					//  This pushes the player leftwards.
 					acceleration.x -= (IS_SKIDDING ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(ON_GROUND ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
 				}
-				if (RIGHT && !LEFT && velocity.x < maxSpeed) {
+				if (RIGHT && !LEFT && !(IS_CROUCHING && ON_GROUND) && velocity.x < maxSpeed) {
 					//  This pushes the player rightwards.
 					acceleration.x += (IS_SKIDDING ? 1.0 - skidMultiplier : 1.0)*maxSpeed*(ON_GROUND ? (velocity.x_abs() > speed ? 2.2 : 1.8) : velocity.x_abs() > speed ? 0.7 : 1.6);
 				}
 			} else {
 				//  If the player's speed snaps, this sets their speed to 0.0 when they are below their maximum speed.
 				velocity.x = 0.0;
-				if (LEFT && !RIGHT) {
+				if (LEFT && !RIGHT && !(IS_CROUCHING && ON_GROUND)) {
 				//  If the player's speed snaps, this sets their speed to max towards the left.
 					velocity.x = -maxSpeed;
 				}
-				if (RIGHT && !LEFT) {
+				if (RIGHT && !LEFT && !(IS_CROUCHING && ON_GROUND)) {
 				//  If the player's speed snaps, this sets their speed to max towards the right.
 					velocity.x = maxSpeed;
 				}
@@ -342,7 +379,7 @@ class Entity {
 			const double& inputDragCoefficient = 2
 		) :
 			position(inputPosition),
-			hitbox(inputHitbox),
+			baseHitbox(inputHitbox),
 			acceleration_const(inputAccelerationConst),
 			speed(inputSpeed),
 			jumpForce(inputJumpForce),

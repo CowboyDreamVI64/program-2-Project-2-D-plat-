@@ -38,7 +38,12 @@ namespace frame {
 		loadAllTextures(textures, {
 			{"player", "assets/textures/player.png"},
 			{"goblin", "assets/textures/Goblin.png"},
-			{"sky", "assets/textures/sky.png"}
+			{"sky", "assets/textures/sky.png"},
+			{"ground", "assets/textures/ground.png"},
+			{"hills1", "assets/textures/hills1.png"},
+			{"hills2", "assets/textures/hills2.png"},
+			{"mountains", "assets/textures/mountains.png"},
+			{"sun", "assets/textures/sun.png"}
 		});
 		
 		//  This loads sound data in the format {soundBufferID, fileDirectory}.
@@ -83,7 +88,12 @@ namespace frame {
 		
 		//  This adds a player sprite and a sky sprite.
 		sprites.add("player", textures["goblin"], 0.0);
-		sprites.add("sky", textures["sky"], -1.0);
+		sprites.add("ground", textures["ground"], 1.0);
+		sprites.add("hills1", textures["hills1"], -1.0);
+		sprites.add("hills2", textures["hills2"], -2.0);
+		sprites.add("mountains", textures["mountains"], -3.0);
+		sprites.add("sun", textures["sun"], -4.0);
+		sprites.add("sky", textures["sky"], -5.0);
 		
 		//  This adds a new sound list to push sounds into called "jump."
 		sound_lists.add("jump");
@@ -96,6 +106,15 @@ namespace frame {
 		ViewPort camera = ViewPort(24, {0.0, 0.0});
 		//  This sets the camera's position to half of its dimensions (this offsets the camera towards the top-right by half of its lengths).
 		camera.position = camera.getPerceivedDimensions(game.resolution)/2;
+		
+		vector<ParallaxInstruction> parallaxSprites = {
+			ParallaxInstruction("ground", "ground", 1, {1, 1}, 0.0, true, false).setApparentPosition({0.5, 0.2}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("hills1", "hills1", 5, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("hills2", "hills2", 10, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("mountains", "mountains", 35, {48, 27}, 0.0, true, false).setApparentPosition({24, 13.5}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("sun", "sun", 45, {12, 12}, 0.0, false, false).setApparentPosition({8, 12}, camera.position).fitLoopToViewPort(camera),
+			ParallaxInstruction("sky", "sky", 60, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera)
+		};
 		
 		//  This creates a player entity.
 		Entity player = Entity({1.5, 1.7}, {1.0, 2.0}, {0.0, -36.0}, 8, 14.0, 1.6, 2);
@@ -145,16 +164,6 @@ namespace frame {
 				
 				
 //  ------------------------------ Frontend Game Loop Starts Here ------------------------------
-				//  This centers the camera position to the player position without the camera clipping out of bounds.
-				camera.position.x = player.position.x < camera.getPerceivedDimensions(game.resolution).x/2 ? camera.getPerceivedDimensions(game.resolution).x/2 : player.position.x;
-				camera.position.y = player.position.y < camera.getPerceivedDimensions(game.resolution).y/2 ? camera.getPerceivedDimensions(game.resolution).y/2 : player.position.y;
-				
-				//  These resize and reposition the player and sky sprites to be able to render properly in the viewport.
-				//  The player sprite renders with its center at player.position and its size being 1 x 2.
-				camera.setInViewport(game, sprites["player"], player.position, {1.0, 2.0});
-				
-				//  The sky sprite renders with its center at (32, 18) and its size being 64 x 36.
-				camera.setInViewport(game, sprites["sky"], {32.0, 18.0}, {64, 36});
 				if (player.is_jumping_triggered()) {
 					sound_lists["jump"].add(sound_buffers["jump"], 0.4f, 0.0f, 1, 1.0, true);
 				}
@@ -165,6 +174,19 @@ namespace frame {
 			
 			
 //  ------------------------------ Frontend Program Loop Starts Here ------------------------------	
+			//  This centers the camera position to the player position without the camera clipping out of bounds.
+			camera.position.x = player.position.x < camera.getPerceivedDimensions(game.resolution).x/2 ? camera.getPerceivedDimensions(game.resolution).x/2 : player.position.x;
+			camera.position.y = player.position.y < camera.getPerceivedDimensions(game.resolution).y/2 ? camera.getPerceivedDimensions(game.resolution).y/2 : player.position.y;
+			
+			//  These resize and reposition the player and sky sprites to be able to render properly in the viewport.
+			//  The player sprite renders with its center at player.position and its size being 1 x 2.
+			camera.setInViewport(game, sprites["player"], player.position, {1.0, 2.0});
+			
+			for (size_t i = 0; i < parallaxSprites.size(); ++i) {
+				ParallaxInstruction& currentPS = parallaxSprites[i];
+				camera.setInViewport(game, sprites[currentPS.spriteID], currentPS.getApparentPosition(camera.position), currentPS.getApparentSize());
+			}
+				
 			//  This clears the "jump" sound list of inactive sounds.
 			if (sound_lists["jump"].inactive()) {
 				sound_lists["jump"].clean();
@@ -180,6 +202,9 @@ namespace frame {
 		
 		//  This clears everything (like sprites, music, and sounds) from the global buffers EXCEPT for textures, sound buffers, and fonts.
 		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+		for (size_t i = 0; i < parallaxSprites.size(); ++i) {
+			parallaxSprites[i].clear();
+		}
 		
 		//  This move to the next state (which is end_application for now).
 		if (game.stableState(!closeWindow)) {

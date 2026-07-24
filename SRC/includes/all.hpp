@@ -151,4 +151,4 @@ using namespace std;
 //  
 #include "entity.hpp"
 
-
+#include "parallax.hpp"

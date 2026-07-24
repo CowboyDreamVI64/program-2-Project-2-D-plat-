@@ -166,4 +166,13 @@ struct Vec2 {
 		inline operator sf::Vector2i() const {
 			return sf::Vector2i(static_cast<int>(x), static_cast<int>(y));
 		}
+		
+		friend ostream& operator<<(ostream& ostream, const Vec2& coordinate);
 };
+
+//  This allows Vec2 instances to be outputted through an iostream stream so you can do cout << Vec2.
+//  This is mainly for debugging.
+ostream& operator<<(ostream& ostream, const Vec2& coordinate) {
+	cout << "(" << coordinate.x << "," << coordinate.y << ")";
+	return ostream;
+}
