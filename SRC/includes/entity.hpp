@@ -18,6 +18,7 @@ class Entity {
 		bool ON_GROUND_TRIGGERED = false;
 		bool IS_JUMPING = false;
 		bool IS_JUMPING_TRIGGERED = false;
+		bool IS_IN_AIR_FROM_JUMPING = false;
 		bool IS_SPRINTING = false;
 		bool IS_SPRINTING_TRIGGERED = false;
 		bool IS_SKIDDING = false;
@@ -26,6 +27,8 @@ class Entity {
 		bool IS_CROUCHING_TRIGGERED = false;
 		bool IS_UNCROUCHING_TRIGGERED = false;
 		size_t JUMP_BUFFER = 0;
+		
+		bool FACING_DIRECTION = true;  //  true is for rightwards facing
 		
 		Vec2 hitbox;
 		
@@ -74,6 +77,9 @@ class Entity {
 		inline bool is_jumping() const {
 			return IS_JUMPING;
 		}
+		inline bool is__in_air_from_jumping() const {
+			return IS_IN_AIR_FROM_JUMPING;
+		}
 		inline bool is_sprinting() const {
 			return IS_SPRINTING;
 		}
@@ -103,6 +109,12 @@ class Entity {
 		}
 		inline bool is_uncrouching_triggered() const {
 			return IS_UNCROUCHING_TRIGGERED;
+		}
+		inline bool is_facing_left() const {
+			return !FACING_DIRECTION;
+		}
+		inline bool is_facing_right() const {
+			return FACING_DIRECTION;
 		}
 		
 		Vec2 baseHitbox;
@@ -280,10 +292,14 @@ class Entity {
 			//  Sets the maximum move speed of the entity based on the sprint speed multiplier.
 			maxSpeed = speed * (IS_SPRINTING ? sprintSpeedMultiplier : 1.0);
 			
+			if (ON_GROUND) {
+				IS_IN_AIR_FROM_JUMPING = false;
+			}
 			
 			if (JUMP) {
 				if (ON_GROUND && (autoJump || JUMP_TRIGGERED || JUMP_BUFFER != 0)) {
 					IS_JUMPING_TRIGGERED = true;
+					IS_IN_AIR_FROM_JUMPING = true;
 					
 					//  True if the entity is in a jump at the moment.
 					IS_JUMPING = true;
@@ -304,7 +320,7 @@ class Entity {
 				}
 				//  True if the player is currently skidding.
 				IS_SKIDDING = true;
-			} else if (!ON_GROUND || ((LEFT && !RIGHT && !(IS_CROUCHING && ON_GROUND) && velocity.x > 0.0) || (RIGHT && !LEFT && !(IS_CROUCHING && ON_GROUND) && velocity.x < 0.0))) {
+			} else if (!ON_GROUND || IS_CROUCHING || LEFT == RIGHT || (LEFT && velocity.x <= 0.0 || RIGHT && velocity.x >= 0.0)) {
 				IS_SKIDDING = false;
 			}
 			
@@ -342,7 +358,7 @@ class Entity {
 			
 			//  This modifies velocity to account for friction and drag.
 			if (velocity.x_abs() > maxSpeed*0.6/TPS) {
-				velocity.x *= exp(-frictionCoefficient*(ON_GROUND ? 1.0 : frictionCoefficientAirMultiplier)/TPS);
+				velocity.x *= exp(-frictionCoefficient*((LEFT == RIGHT) && !IS_CROUCHING && velocity.x_abs() < maxSpeed/2 ? 4 : 1.0)*(ON_GROUND ? 1.0 : frictionCoefficientAirMultiplier)/TPS);
 			} else {
 				velocity.x = 0.0;
 			}
@@ -372,6 +388,14 @@ class Entity {
 				}
 			}
 			
+			if (ON_GROUND) {
+				if (LEFT && !RIGHT) {
+					FACING_DIRECTION = false;
+				} else if (RIGHT && !LEFT) {
+					FACING_DIRECTION = true;
+				}
+			}
+			
 			return *this;
 		}
 	
@@ -393,4 +417,38 @@ class Entity {
 			frictionCoefficient(inputFrictionCoefficient),
 			dragCoefficient(inputDragCoefficient)
 		{};
+		
+		AnimationState animation_state;
+		
+		Entity& tickAnimation(const size_t& TPS) {
+			if (animation_state.getAnimationID() == "walking") {
+				animation_state.tick(1.0/TPS * ON_GROUND * (velocity.x_abs() > speed ? 2 : 1.0));
+			} else {
+				animation_state.tick(1.0/TPS);
+			}
+			return *this;
+		}
+		
+		Entity& updateAnimationState() {
+			string finalState;
+			
+			if (IS_CROUCHING) {
+				finalState = "crouching";
+			} else if (IS_SKIDDING) {
+				finalState = "skidding";
+			} else if (IS_IN_AIR_FROM_JUMPING) {
+				finalState = "jumping";
+			} else if (!(velocity.x_abs() < speed/15 && ON_GROUND) || LEFT != RIGHT) {
+				finalState = "walking";
+			} else {
+				finalState = "idle";
+			}
+			
+			if (animation_state.getAnimationID() != finalState) {
+				animation_state.setAnimationID(finalState);
+			}
+			
+			return *this;
+		}
+		
 };

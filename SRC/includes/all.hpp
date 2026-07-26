@@ -139,6 +139,8 @@ using namespace std;
 //  -------------------------------------------------------------------------------------------------------
 #include "viewport.hpp"
 
+#include "animation.hpp"
+
 //  --- ENTITY ---
 //  
 //  This contains details about an actor in the world. It will eventually have collision

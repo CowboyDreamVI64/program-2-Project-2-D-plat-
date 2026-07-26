@@ -133,4 +133,5 @@ struct ParallaxInstruction {
 		ParallaxInstruction(const string& inputSpriteID, const string& inputBaseTextureID, const double& inputDistance, const Vec2& inputApparentSize, const Vec2& inputActualPosition, const bool& loopDirectionX, const bool& loopDirectionY)
 			: spriteID(inputSpriteID), baseTextureID(inputBaseTextureID), distance(inputDistance), apparentSize(inputApparentSize), actualPosition(inputActualPosition), loopDirection({loopDirectionX, loopDirectionY})
 		{}
+		ParallaxInstruction() {}
 };
