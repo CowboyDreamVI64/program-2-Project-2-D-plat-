@@ -158,3 +158,20 @@ using namespace std;
 #include "entity.hpp"
 
 #include "parallax.hpp"
+//--------------- Araceli Part ----------------
+//  --- PLAYER STATS ---
+//  
+//  This contains the PlayerStats struct (health, coins, points, lives, etc), the global
+//  "playerStats" instance, and the savePlayerStats()/loadPlayerStats() functions used to persist
+//  those stats to/from a file between play sessions.
+//  -------------------------------------------------------------------------------------------------------
+#include "player_stats.hpp"
+ 
+//  --- HUD ---
+//  
+//  This contains the HUD class (and the global "hud" instance), which draws the on-screen health/
+//  coins/points/lives display based on the contents of "playerStats." Depends on player_stats.hpp
+//  being included first.
+//  -------------------------------------------------------------------------------------------------------
+#include "hud.hpp"
+ // ----------------- Araceli Part ------------------------
