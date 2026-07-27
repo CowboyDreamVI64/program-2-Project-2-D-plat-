@@ -5,6 +5,94 @@
 
 
 
+// ----------------------- Araceli Part Start ---------------------
+
+// 1. In start_application() — texture list, font loading, and save loading
+
+loadAllTextures(textures, {
+    ... (existing entries unchanged) ...
+    {"sun", "assets/textures/sun.png"},
+    //  UI textures for the HUD.
+    {"ui.heart", "assets/textures/Heart.png"},
+    {"ui.coin", "assets/textures/Coin.png"}
+});
+
+loadAllSoundBuffers(sound_buffers, { ... unchanged ... });
+
+//  This loads font data in the format {fontID, fileDirectory}.
+//  NOTE: there is no .ttf/.otf file in assets/fonts/ yet -- drop one in there and update the
+//  path below (it must be named to match) or the HUD's text will silently fail to render.
+loadAllFonts(fonts, {
+    {"main", "assets/fonts/main.ttf"}
+});
+
+textures.setSmooth(false);
+fonts.setSmooth(false);
+
+game.setIcon(textures["player.idle"]);
+game.open();
+
+//  This loads the player's persistent stats (health, coins, points, lives) from the save
+//  file, if one exists. If no save file is found, playerStats just keeps its default values.
+loadPlayerStats(playerStats);
+
+clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+
+// Added: the ui.heart/ui.coin texture entries, the whole loadAllFonts(...) call, and the loadPlayerStats(playerStats); line.
+
+
+
+
+
+
+
+// 2. In test_level(), right before the main loop — build the HUD
+
+bool mouseDraggingPlayer = false;
+
+//  This builds every HUD sprite/text element (coin/lives icons, heart row, score text, etc)
+//  now that the required textures/font have been loaded and the sprite/text containers have
+//  been freshly cleared for this state.
+hud.build();
+        
+while (game.stableState(frameState)) {
+//Added: the hud.build(); call (and its comment).
+
+
+
+
+
+
+// 3. Inside the physics tick, right after player.tickPhysics(tps); — a temporary debug block:
+
+//  ------------------------------ TEMPORARY player stat debug controls ------------------------------
+//  These let you see the HUD respond to stat changes before collision/collectibles/enemies exist to
+//  actually trigger them. Delete this block once those systems are wired up to call playerStats
+//  directly (e.g. a Coin's applyEffect() calling playerStats.addCoins(), a Hazard tile calling
+//  playerStats.damage(), etc).
+{
+    static bool JKEY = false, LKEY = false, IKEY = false, OKEY = false, UKEY = false;
+    
+    if (game.pollForKey(sf::Keyboard::Key::J) && !JKEY) { playerStats.addCoins(1); }
+    JKEY = game.pollForKey(sf::Keyboard::Key::J);
+    
+    if (game.pollForKey(sf::Keyboard::Key::L) && !LKEY) { playerStats.damage(1); }
+    LKEY = game.pollForKey(sf::Keyboard::Key::L);
+    
+    if (game.pollForKey(sf::Keyboard::Key::I) && !IKEY) { playerStats.heal(1); }
+    IKEY = game.pollForKey(sf::Keyboard::Key::I);
+    
+    if (game.pollForKey(sf::Keyboard::Key::O) && !OKEY) { playerStats.addPoints(100); }
+    OKEY = game.pollForKey(sf::Keyboard::Key::O);
+    
+    if (game.pollForKey(sf::Keyboard::Key::U) && !UKEY) {
+        playerStats.damage(playerStats.health);
+        playerStats.loseLife();
+    }
+    UKEY = game.pollForKey(sf::Keyboard::Key::U);
+}
+//  ------------------------------ TEMPORARY player stat debug controls end ------------------------------
+// This whole block is new — delete it once real collision/collectible code is calling playerStats directly.
 
 
 
@@ -13,6 +101,36 @@
 
 
 
+// 4. In the frontend program loop — update and actually render the HUD
+sound_lists["jump"].setPanShift(-180*(player.position.x - camera.position.x)/64);
+
+//  This refreshes every HUD element (health hearts, coins, points, lives, game over text)
+//  to match the current playerStats.
+hud.update(playerStats);
+
+//  This renders sprites onto the window.
+...
+game.refresh(true, sprites, texts);   // <-- was game.refresh(true, sprites); — texts wasn't being passed, so no text ever rendered before this
+// Added: hud.update(playerStats); and the texts argument to game.refresh(...).
+
+
+
+
+
+
+// 5. After the loop ends — save on exit
+
+//  This saves the player's current stats (health, coins, points, lives) back to the save file
+//  so they persist the next time the game is launched.
+savePlayerStats(playerStats);
+
+clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+
+//Added: the savePlayerStats(playerStats); line, right before the existing clearall(...).
+//Everything else in main.cpp (the player entity setup, animation states, parallax, camera logic) is untouched.
+
+
+// ------------------------- Araceli Part End ---------------------------------
 
 //  This namespace will contain every state of the game, like levels and menus.
 namespace frame {
