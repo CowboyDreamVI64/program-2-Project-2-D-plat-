@@ -96,7 +96,7 @@ namespace frame {
 		
 		//  This adds a player sprite and a sky sprite.
 		sprites.add("player", textures["player.idle"], 0.0);
-		sprites.add("ground", textures["ground"], -1.0);
+		sprites.add("ground", textures["ground"], -1.0).add_tag("repeated_sprite").add_tag("repeated_sprite.ground");
 		sprites.add("hills1", textures["hills1"], -2.0);
 		sprites.add("hills2", textures["hills2"], -3.0);
 		sprites.add("clouds1", textures["clouds"], -4.0).setOpacity(0.85);
@@ -104,6 +104,8 @@ namespace frame {
 		sprites.add("clouds2", textures["clouds"], -6.0).setOpacity(0.4);
 		sprites.add("sun", textures["sun"], -7.0);
 		sprites.add("sky", textures["sky"], -8.0);
+		
+		vector<ExtendedSprite*> sortedSprites = sprites.getExtendedVector();
 		
 		//  This adds a new sound list to push sounds into called "jump."
 		sound_lists.add("jump");
@@ -120,7 +122,6 @@ namespace frame {
 		camera.position = camera.getPerceivedDimensions(game.resolution)/2;
 		
 		unordered_map<string, ParallaxInstruction> parallaxSprites = {
-			{ "ground", ParallaxInstruction("ground", "ground", 1, {1, 1}, 0.0, true, false).setApparentPosition({0.5, 0.2}, camera.position).fitLoopToViewPort(camera) },
 			{ "hills1", ParallaxInstruction("hills1", "hills1", 5, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
 			{ "hills2", ParallaxInstruction("hills2", "hills2", 10, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
 			{ "clouds1", ParallaxInstruction("clouds1", "clouds", 12, {48, 21.6}, 0.0, true, true).setApparentPosition({16, 10.8}, camera.position).fitLoopToViewPort(camera) },
@@ -134,7 +135,7 @@ namespace frame {
 		Entity player = Entity({1.5, 1.7}, {1.0, 2.0}, {0.0, -56.0}, 8, 14.0, 1.6, 2);
 		player.accelerationConstJumpingMultiplier.y = 0.32;
 		player.maxJumpBufferFrames = tps/3;
-		player.skidMultiplier = 0.5;
+		player.skidMultiplier = 0.35;
 		player.autoJump = false;
 		player.animation_state = AnimationState({
 			{ "idle",
@@ -257,7 +258,21 @@ namespace frame {
 			//  This shifts where you hear the sounds in the "jump" sound list.
 			sound_lists["jump"].setPanShift(-180*(player.position.x - camera.position.x)/64);
 			
-			//  This renders sprites onto the window (leave this true here).
+			//  This renders sprites onto the window.
+			
+			for (ExtendedSprite*& spritePtr : sortedSprites) {
+				if (spritePtr) {
+					ExtendedSprite& currentSprite = *spritePtr;
+					
+					if (currentSprite.has_tag("repeated_sprite")) {
+						if (currentSprite.has_tag("repeated_sprite.ground")) {
+							//  Render multiple ground instances here
+						}
+					} else {
+						game.ExtendedDraw(&currentSprite);
+					}
+				}
+			}
 			game.refresh(true, sprites);
 //  ------------------------------ Frontend Program Loop Ends Here ------------------------------
 			

@@ -9,6 +9,8 @@
 #include <filesystem>			//  Included for file/folder exploring
 #include <type_traits>			//  Included in order to deduce if a type is integer-like or floating-point-like
 #include <limits>				//  Included in order to be able to get the maximum value of a specific integer type
+#include <stdexcept>
+#include <fstream>
 
 //  --- <optional> ---
 //  
@@ -140,6 +142,8 @@ using namespace std;
 #include "viewport.hpp"
 
 #include "animation.hpp"
+
+#include "tile.hpp"
 
 //  --- ENTITY ---
 //  

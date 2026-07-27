@@ -5,8 +5,8 @@ class ExtendedWindow {
 		bool inputFullscreen = false;
 	public:
 		ExtendedWindow& refresh(const bool& declareBoundsUniforms, const SpriteContainer& inputSpriteContainer, const TextContainer& inputTextContainer);
-		template <typename T, typename U>
-		ExtendedWindow& ExtendedDraw(const T* extendedDrawable, const U& drawable, const bool& declareBoundsUniforms);
+		template <typename T>
+		ExtendedWindow& ExtendedDraw(const T* extendedDrawable, const bool& declareBoundsUniforms = false);
 		sf::RenderWindow* window;
 		unsigned int framerate;
 		bool fullscreen = false;

@@ -514,18 +514,20 @@ class TextContainer : public DrawableContainer<sf::Text, TextContainer, Extended
 		TextContainer(float inputInitialSizeMultiplier = 1.0) : extended_text(taggables), DrawableContainer(inputInitialSizeMultiplier) {}
 };
 
-template <typename T, typename U>
-ExtendedWindow& ExtendedWindow::ExtendedDraw(const T* extendedDrawable, const U& drawable, const bool& declareBoundsUniforms) {
-	if (declareBoundsUniforms && extendedDrawable->shader) {
-		sf::FloatRect windowGlobalBounds = getGlobalBounds();
-		sf::FloatRect drawableGlobalBounds = extendedDrawable->getGlobalBounds();
-		extendedDrawable->shader->setUniform("drawableTexture", sf::Shader::CurrentTexture);
-		extendedDrawable->shader->setUniform("windowPosition", windowGlobalBounds.position);
-		extendedDrawable->shader->setUniform("windowSize", windowGlobalBounds.size);
-		extendedDrawable->shader->setUniform("drawablePosition", drawableGlobalBounds.position);
-		extendedDrawable->shader->setUniform("drawableSize", drawableGlobalBounds.size);
+template <typename T>
+ExtendedWindow& ExtendedWindow::ExtendedDraw(const T* extendedDrawable, const bool& declareBoundsUniforms) {
+	if (extendedDrawable) {
+		if (declareBoundsUniforms && extendedDrawable->shader) {
+			sf::FloatRect windowGlobalBounds = getGlobalBounds();
+			sf::FloatRect drawableGlobalBounds = extendedDrawable->getGlobalBounds();
+			extendedDrawable->shader->setUniform("drawableTexture", sf::Shader::CurrentTexture);
+			extendedDrawable->shader->setUniform("windowPosition", windowGlobalBounds.position);
+			extendedDrawable->shader->setUniform("windowSize", windowGlobalBounds.size);
+			extendedDrawable->shader->setUniform("drawablePosition", drawableGlobalBounds.position);
+			extendedDrawable->shader->setUniform("drawableSize", drawableGlobalBounds.size);
+		}
+		window->draw(extendedDrawable->drawable(), extendedDrawable->shader);
 	}
-	window->draw(drawable, extendedDrawable->shader);
 	return *this;
 }
 ExtendedWindow& ExtendedWindow::refresh(const bool& declareBoundsUniforms = false, const SpriteContainer& containerA = SpriteContainer(), const TextContainer& containerB = TextContainer()) {
@@ -548,17 +550,17 @@ ExtendedWindow& ExtendedWindow::refresh(const bool& declareBoundsUniforms = fals
 		while (true) {
 			if (cursorA < extendedDrawablesA.size() && cursorB < extendedDrawablesB.size()) {
 				if (extendedDrawablesA[cursorA]->z < extendedDrawablesB[cursorB]->z) {
-					ExtendedDraw(extendedDrawablesA[cursorA], extendedDrawablesA[cursorA]->drawable(), declareBoundsUniforms);
+					ExtendedDraw(extendedDrawablesA[cursorA], declareBoundsUniforms);
 					++cursorA;
 				} else {
-					ExtendedDraw(extendedDrawablesB[cursorB], extendedDrawablesB[cursorB]->drawable(), declareBoundsUniforms);
+					ExtendedDraw(extendedDrawablesB[cursorB], declareBoundsUniforms);
 					++cursorB;
 				}
 			} else if (cursorA < extendedDrawablesA.size()) {
-				ExtendedDraw(extendedDrawablesA[cursorA], extendedDrawablesA[cursorA]->drawable(), declareBoundsUniforms);
+				ExtendedDraw(extendedDrawablesA[cursorA], declareBoundsUniforms);
 				++cursorA;
 			} else if (cursorB < extendedDrawablesB.size()) {
-				ExtendedDraw(extendedDrawablesB[cursorB], extendedDrawablesB[cursorB]->drawable(), declareBoundsUniforms);
+				ExtendedDraw(extendedDrawablesB[cursorB], declareBoundsUniforms);
 				++cursorB;
 			} else {
 				break;

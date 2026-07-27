@@ -9,13 +9,13 @@ class TaggableElement {
 		}
 	public:
 		unordered_set<string> tag;
-		Element_c& tag_add(const string& inputTag) {
+		Element_c& add_tag(const string& inputTag) {
 			if (count(tag.begin(), tag.end(), inputTag) <= 0) {
 				tag.insert(inputTag);
 			}
 			return this_dref();
 		}
-		Element_c& tag_remove(const string& inputTag) {
+		Element_c& remove_tag(const string& inputTag) {
 			if (count(tag.begin(), tag.end(), inputTag) <= 0) {
 				tag.erase(inputTag);
 			}
@@ -27,6 +27,9 @@ class TaggableElement {
 		}
 		inline bool tag_exists(const string& inputTag) const {
 			return count(tag.begin(), tag.end(), inputTag) > 0;
+		}
+		inline bool has_tag(const string& inputTag) const {
+			return tag_exists(inputTag);
 		}
 		vector<string> get_tags() const {
 			vector<string> outputVector = vector<string>(tag.begin(), tag.end());
@@ -645,6 +648,16 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 				outputDrawables.push_back(currentDrawable->d);
 			}
 			return outputDrawables;
+		}
+		
+		vector<Element_c*> getExtendedVector() {
+			vector<Element_c*> extendedDrawables;
+			extendedDrawables.reserve(extended_drawable().size());
+			for (const pair<const string&, const Element_c&> currentDrawable : extended_drawable()) {
+				extendedDrawables.push_back(&extended_drawable().at(currentDrawable.first));
+			}
+			sort(extendedDrawables.begin(), extendedDrawables.end(), sortCondition);
+			return extendedDrawables;
 		}
 		
 		vector<sf::Shader*> getShaderVector() {
