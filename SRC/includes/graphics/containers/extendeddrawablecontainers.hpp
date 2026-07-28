@@ -490,7 +490,7 @@ class ExtendedText : public DrawableElement<sf::Text, TextContainer, ExtendedTex
 		float getCharacterSizeMultiplierToFill(referenceT& referenceDrawable) const {
 			return getCharacterSizeMultiplierToFill(referenceDrawable.getGlobalBounds().size);
 		}
-		ExtendedText(TextContainer* inputParentTextContainer, sf::Font& inputFont, double inputZ = 0) : DrawableElement(inputParentTextContainer, inputFont, inputZ) {}
+		ExtendedText(TextContainer* inputParentTextContainer, const sf::Font& inputFont, double inputZ = 0) : DrawableElement(inputParentTextContainer, inputFont, inputZ) {}
 		ExtendedText(TextContainer* inputParentTextContainer, sf::Text inputText, double inputZ = 0) : DrawableElement(inputParentTextContainer, inputText, inputZ) {}
 		
 		//  Copy and move stuff since static polymorphism is being stubborn about &text

@@ -24,6 +24,7 @@ class HUD {
 	public:
 		string heartTextureID = "ui.heart";
 		string coinTextureID = "ui.coin";
+		string livesTextureID = "ui.player";
 		string fontID = "main";
 		
 		//  Pixel padding from the top-left corner of the window.
@@ -54,7 +55,7 @@ class HUD {
 				.setCharacterSize(22)
 				.setFillColor(sf::Color::White);
 			
-			sprites.add("hud.lives_icon", textures["player.idle"], z)
+			sprites.add("hud.lives_icon", textures[livesTextureID], z)
 				.resizeToFit(sf::Vector2f({iconSize, iconSize}))
 				.setPosition(sf::Vector2f({paddingX, paddingY + iconSize + 8.0f}));
 			

@@ -148,10 +148,10 @@ class TaggableContainer {
 		}
 
 		inline Element_c& at(const string& inputID) {
-			return taggables.at(inputID);
+			return static_cast<Element_c&>(taggables.at(inputID));
 		}
 		inline const Element_c& at(const string& inputID) const {
-			return taggables.at(inputID);
+			return static_cast<const Element_c&>(taggables.at(inputID));
 		}
 		inline Element_c& operator[](const string& inputID) {
 			return at(inputID);
@@ -621,7 +621,7 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 			}
 		}
 		
-		vector<string> at(const double& inputZ) const {
+		vector<string> atZ(const double& inputZ) const {
 			vector<string> outputIDs;
 			for (pair<string, Element_c> currentDrawable : extended_drawable()) {
 				if (currentDrawable.second.z == inputZ) {
@@ -654,7 +654,7 @@ class DrawableContainer : public TaggableContainer<Container_c, Element_c> {
 			vector<Element_c*> extendedDrawables;
 			extendedDrawables.reserve(extended_drawable().size());
 			for (const pair<const string&, const Element_c&> currentDrawable : extended_drawable()) {
-				extendedDrawables.push_back(&extended_drawable().at(currentDrawable.first));
+				extendedDrawables.push_back(&this->at(currentDrawable.first));
 			}
 			sort(extendedDrawables.begin(), extendedDrawables.end(), sortCondition);
 			return extendedDrawables;

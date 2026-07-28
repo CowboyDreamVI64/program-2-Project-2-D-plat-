@@ -1,0 +1,6 @@
+health=3
+maxHealth=3
+coins=0
+points=0
+lives=3
+maxLives=99

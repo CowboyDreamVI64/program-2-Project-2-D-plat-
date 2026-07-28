@@ -1,15 +1,16 @@
 namespace TileType {
 	const char Air = '.';
+	const char Enemy = 'E';
 	const char Ground = '#';
 	const char Hazard = '^';
 	const char Coin = 'C';
 	const char Heart = 'H';
-	const char PlayerStart = 'P';
 	const char Goal = 'G';
 	const char Invalid = 'X';
+	const char PlayerStart = 'P';
 	
 	inline bool isValidTileType(const char inputChar) {
-		if (inputChar == Air || inputChar == Ground || inputChar == Hazard || inputChar == Coin || inputChar == Heart || inputChar == Goal) {
+		if (inputChar == Air || inputChar == Enemy || inputChar == PlayerStart || inputChar == Ground || inputChar == Hazard || inputChar == Coin || inputChar == Heart || inputChar == Goal) {
 			return true;
 		}
 		return false;
@@ -31,6 +32,9 @@ class Tile {
 		}
 		inline bool isHazard() const {
 			return type == TileType::Hazard;
+		}
+		inline bool isEnemy() const {
+			return type == TileType::Enemy;
 		}
 		inline bool isCollectable() const {
 			return type == TileType::Coin || type == TileType::Heart;
@@ -84,28 +88,32 @@ class TileMap {
 		size_t maxWidth = 0;
 		size_t maxHeight = 0;
 		
-		Vec2 playerSpawnPosition = 0;
-		
 		Tile& getTile(const size_t X, const size_t Y) {
-			if (X >= maxWidth || Y >= maxHeight) {
-				throw std::runtime_error("Tried \"unsigned long long X >= TileMap::maxWidth || unsigned long long Y >= TileMap::maxHeight\", got throw-requiring \'true\'; when executing \"std::vector<std::vector<Tile>>[unsigned long long][unsigned long long]\" (at method \"TileMap::getTile(const unsigned long long, const unsigned long long)\")");
+			if (X > maxWidth || Y > maxHeight) {
+				throw std::runtime_error("Tried \"unsigned long long X > TileMap::maxWidth || unsigned long long Y > TileMap::maxHeight\", got throw-requiring \'true\'; when executing \"std::vector<std::vector<Tile>>[unsigned long long][unsigned long long]\" (at method \"TileMap::getTile(const unsigned long long, const unsigned long long)\")");
 			}
 			return tiles[Y][X];
 		}
 		const Tile& getTile(const size_t X, const size_t Y) const {
-			if (X >= maxWidth || Y >= maxHeight) {
-				throw std::runtime_error("Tried \"unsigned long long X >= TileMap::maxWidth || unsigned long long Y >= TileMap::maxHeight\", got throw-requiring \'true\'; when executing \"std::vector<std::vector<Tile>>[unsigned long long][unsigned long long]\" (at method \"const TileMap::getTile(const unsigned long long, const unsigned long long) const\")");
+			if (X > maxWidth || Y > maxHeight) {
+				throw std::runtime_error("Tried \"unsigned long long X > TileMap::maxWidth || unsigned long long Y > TileMap::maxHeight\", got throw-requiring \'true\'; when executing \"std::vector<std::vector<Tile>>[unsigned long long][unsigned long long]\" (at method \"const TileMap::getTile(const unsigned long long, const unsigned long long) const\")");
+			}
+			return tiles[Y][X];
+		}
+		const Tile getTileCopy(const size_t X, const size_t Y) const {
+			if (X > maxWidth || Y > maxHeight) {
+				return Tile(TileType::Invalid);
 			}
 			return tiles[Y][X];
 		}
 		TileMap& setTile(const size_t X, const size_t Y, const char tileType) {
-			if (TileType::isValidTileType(tileType) && X < maxWidth && Y < maxHeight) {
+			if (TileType::isValidTileType(tileType) && X <= maxWidth && Y <= maxHeight) {
 				tiles[Y][X].setType(tileType);
 			}
 			return *this;
 		}
 		TileMap& setTile(const size_t X, const size_t Y, const Tile inputTile) {
-			if (TileType::isValidTileType(inputTile.getType()) && X < maxWidth && Y < maxHeight) {
+			if (TileType::isValidTileType(inputTile.getType()) && X <= maxWidth && Y <= maxHeight) {
 				tiles[Y][X] = inputTile;
 			}
 			return *this;
@@ -115,7 +123,6 @@ class TileMap {
 			tiles = vector<vector<Tile>>();
 			maxWidth = 0;
 			maxHeight = 0;
-			playerSpawnPosition = 0;
 			
 			const char* data = static_cast<const char*>(void_data);
 			
@@ -128,7 +135,7 @@ class TileMap {
 			for (size_t i = 0; i < size; ++i) {	
 				const char currentChar = *(data + i);
 				
-				if (currentChar == 'X') {
+				if (currentChar == TileType::Invalid) {
 					break;
 				} else if (currentChar == '\n') {
 					++currentLine;
@@ -141,12 +148,7 @@ class TileMap {
 					currentWidth = 0;
 				}
 				
-				if (currentChar == TileType::PlayerStart) {
-					playerHasSpawnTile = true;
-					playerSpawnTileLocation = {currentWidth, maxHeight};
-					tiles[currentLine].push_back(Tile(TileType::Air));
-					++currentWidth;
-				} else if (TileType::isValidTileType(currentChar)) {
+				if (TileType::isValidTileType(currentChar)) {
 					tiles[currentLine].push_back(Tile(currentChar));
 					++currentWidth;
 				}
@@ -189,6 +191,21 @@ class TileMap {
 			}
 			
 			return *this;
+		}
+		
+		array<array<size_t, 2>, 2> resolveIndexRangeContext(Vec2 pos, Vec2 size = 1.0) const {
+			pos += 0.5;
+			size += 2;
+			
+			array<array<size_t, 2>, 2> output;
+			//  Output: [0 for min, 1 for max][0 for x, 1 for y];
+			output[0][0] = pos.x - size.x/2 < 0 ? 0 : static_cast<size_t>(pos.x - size.x/2);
+			output[1][0] = pos.x + size.x/2 > maxWidth ? maxWidth : static_cast<size_t>(pos.x + size.x/2);
+			
+			output[0][1] = pos.y - size.y/2 < 0 ? 0 : static_cast<size_t>(pos.y - size.y/2);
+			output[1][1] = pos.y + size.y/2 > maxHeight ? maxHeight : static_cast<size_t>(pos.y + size.y/2);
+			
+			return output;
 		}
 		
 		TileMap() {}

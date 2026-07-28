@@ -11,6 +11,8 @@
 #include <limits>				//  Included in order to be able to get the maximum value of a specific integer type
 #include <stdexcept>
 #include <fstream>
+#include <cstddef>
+#include <cctype>
 
 //  --- <optional> ---
 //  
@@ -94,6 +96,8 @@ using namespace std;
 //  
 #include "assets_loader.hpp"
 
+#include "parse.hpp"
+
 //  --- RANDOM HELPERS ---
 //  
 //  This is just a helper library for more easily controlling random number generation.
@@ -144,6 +148,8 @@ using namespace std;
 #include "animation.hpp"
 
 #include "tile.hpp"
+
+#include "level.hpp"
 
 //  --- ENTITY ---
 //  

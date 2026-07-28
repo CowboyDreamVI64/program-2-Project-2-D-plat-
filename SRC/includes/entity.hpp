@@ -1,3 +1,10 @@
+
+namespace EntityBehaviorTypes {
+	constexpr short Default = 0;
+	constexpr short Player = 1;
+	constexpr short Enemy = 2;
+}
+
 //  A class that stores details about entities and simulates their physics.
 class Entity {
 	protected:
@@ -26,11 +33,13 @@ class Entity {
 		bool IS_CROUCHING = false;
 		bool IS_CROUCHING_TRIGGERED = false;
 		bool IS_UNCROUCHING_TRIGGERED = false;
+		bool UNCROUCH_BLOCKED = false;
+		bool HEAD_HIT_OBJECT_TRIGERRED = false;
 		size_t JUMP_BUFFER = 0;
 		
 		bool FACING_DIRECTION = true;  //  true is for rightwards facing
 		
-		Vec2 hitbox;
+		Vec2 HITBOX;
 		
 		double maxSpeed = 0.0;
 	public:
@@ -110,11 +119,20 @@ class Entity {
 		inline bool is_uncrouching_triggered() const {
 			return IS_UNCROUCHING_TRIGGERED;
 		}
+		inline bool uncrouch_blocked() const {
+			return UNCROUCH_BLOCKED;
+		}
+		inline bool head_hit_object_trigerred() const {
+			return HEAD_HIT_OBJECT_TRIGERRED;
+		}
 		inline bool is_facing_left() const {
 			return !FACING_DIRECTION;
 		}
 		inline bool is_facing_right() const {
 			return FACING_DIRECTION;
+		}
+		inline Vec2 hitbox() const {
+			return HITBOX;
 		}
 		
 		Vec2 baseHitbox;
@@ -166,7 +184,9 @@ class Entity {
 		//  The default boolean array of input for the entity; setting any of these boolean values to "true" will make the corresponding movement
 		//  register as input when no keybinds are passed through "receiveInput."
 		std::array<bool, 6> constInput;
-	
+		
+		short behaviorType;
+		
 		//  Takes a list of booleans as input.
 		Entity& receiveInput(const std::array<bool, 6>& booleans) {
 			UP_TRIGGERED = false;
@@ -185,14 +205,16 @@ class Entity {
 					}
 					IS_CROUCHING = true;
 				} else {
-					if (IS_CROUCHING) {
-						IS_UNCROUCHING_TRIGGERED = true;
+					if (!UNCROUCH_BLOCKED) {
+						if (IS_CROUCHING) {
+							IS_UNCROUCHING_TRIGGERED = true;
+						}
+						IS_CROUCHING = false;
 					}
-					IS_CROUCHING = false;
 				}
 			}
 			
-			hitbox = baseHitbox * Vec2(1.0, 1.0 - 0.5*IS_CROUCHING);
+			HITBOX = baseHitbox * Vec2(1.0, 1.0 - 0.5*IS_CROUCHING);
 			if (IS_CROUCHING_TRIGGERED) {
 				position.y -= baseHitbox.y/4;
 			} else if (IS_UNCROUCHING_TRIGGERED) {
@@ -304,6 +326,7 @@ class Entity {
 					//  True if the entity is in a jump at the moment.
 					IS_JUMPING = true;
 					ON_GROUND = false;
+					JUMP_BUFFER = 0;
 					
 					//  Calculates the addition to the player's y velocity when the player jumped.
 					velocity.y += jumpForce * (velocity.x_abs() > speed*1.05 ? jumpForceSprintingMultiplier : 1.0);
@@ -370,19 +393,8 @@ class Entity {
 			//  This resets acceleration to acceleration_const.
 			acceleration = acceleration_const;
 			
-			//  This is a temporary "ground" that has been set until block loading and collision have been established.
-			const double GROUND_HEIGHT = 0.7;
-			if (position.y < GROUND_HEIGHT + hitbox.y/2) {
-				position.y = GROUND_HEIGHT + hitbox.y/2;
-				velocity.y = 0.0;
-				if (!ON_GROUND) {
-					ON_GROUND_TRIGGERED = true;
-				}
-				ON_GROUND = true;
-			}
-			
-			if (position.x < -0.3 + hitbox.x/2) {
-				position.x = -0.3 + hitbox.x/2;
+			if (position.x < -0.3 + HITBOX.x/2) {
+				position.x = -0.3 + HITBOX.x/2;
 				if (velocity.x < 0) {
 					velocity.x = 0;
 				}
@@ -399,8 +411,74 @@ class Entity {
 			return *this;
 		}
 	
+		Entity& resolveBlockCollision(const TileMap& inputTileMap) {
+			ON_GROUND = false;
+			ON_GROUND_TRIGGERED = false;
+			UNCROUCH_BLOCKED = false;
+			HEAD_HIT_OBJECT_TRIGERRED = false;
+			
+			const array<array<size_t, 2>, 2> entityIndexRangeContext = inputTileMap.resolveIndexRangeContext(position, HITBOX);
+			
+			for (size_t Y = entityIndexRangeContext[0][1]; Y < entityIndexRangeContext[1][1]; ++Y) {
+				for (size_t X = entityIndexRangeContext[0][0]; X < entityIndexRangeContext[1][0]; ++X) {
+					if (IS_CROUCHING && inputTileMap.getTileCopy(X,Y).isSolid()) {
+						if (position.x + HITBOX.x/2 > X && position.x - HITBOX.x/2 < X + 1.0 && position.y + HITBOX.y > Y && position.y < Y + 1.0) {
+							if (position.y < Y + 0.5 + HITBOX.y/2) {
+								UNCROUCH_BLOCKED = true;
+							}
+						}
+					}
+					if (position.x + HITBOX.x/2 > X && position.x - HITBOX.x/2 < X + 1.0 && position.y + HITBOX.y/2 > Y && position.y - HITBOX.y/2 < Y + 1.0) {
+						Vec2 overlap(
+							position.x < X + 0.5 ? position.x + HITBOX.x/2 - X : X + 1.0 - position.x + HITBOX.x/2,
+							position.y < Y + 0.5 ? position.y + HITBOX.y/2 - Y : Y + 1.0 - position.y + HITBOX.y/2
+						);
+						
+						if (overlap.x < overlap.y) {
+							//  Right collision; push left
+							if (position.x < X + 0.5) {
+								
+								if (inputTileMap.getTileCopy(X,Y).isSolid() && !inputTileMap.getTileCopy(X - 1,Y).isSolid()) {
+									position.x = X - HITBOX.x/2;
+									velocity.x = 0;
+								}
+							} else {
+							//  Left collision; push right
+								if (inputTileMap.getTileCopy(X,Y).isSolid() && !inputTileMap.getTileCopy(X + 1,Y).isSolid()) {
+									position.x = X + 1.0 + HITBOX.x/2;
+									velocity.x = 0;
+								}
+							}
+						} else {
+							if (position.y < Y + 0.5) {
+								//  Top collision; push down
+								if (inputTileMap.getTileCopy(X,Y).isSolid()) {
+									position.y = Y - HITBOX.y/2;
+									velocity.y *= velocity.y > 0 ? -0.2 : 1;
+									HEAD_HIT_OBJECT_TRIGERRED = true;
+								}
+							} else {
+								//  Bottom collision; push up
+								if (inputTileMap.getTileCopy(X,Y).isSolid()) {
+									position.y = Y + 1.0 + HITBOX.y/2;
+									velocity.y = 0;
+									if (!ON_GROUND) {
+										ON_GROUND_TRIGGERED = true;
+									}
+									ON_GROUND = true;
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			return *this;
+		}
+	
 		//  The default Entity constructor
 		Entity(
+			const short inputBehaviorType = EntityBehaviorTypes::Default,
 			const Vec2& inputPosition = {0.0, 0.0},
 			const Vec2& inputHitbox = {1.0, 1.0},
 			const Vec2& inputAccelerationConst = {0.0, -36.0},
@@ -409,6 +487,7 @@ class Entity {
 			const double& inputFrictionCoefficient = 2.0,
 			const double& inputDragCoefficient = 2
 		) :
+			behaviorType(inputBehaviorType),
 			position(inputPosition),
 			baseHitbox(inputHitbox),
 			acceleration_const(inputAccelerationConst),

@@ -5,94 +5,6 @@
 
 
 
-// ----------------------- Araceli Part Start ---------------------
-
-// 1. In start_application() — texture list, font loading, and save loading
-
-loadAllTextures(textures, {
-    ... (existing entries unchanged) ...
-    {"sun", "assets/textures/sun.png"},
-    //  UI textures for the HUD.
-    {"ui.heart", "assets/textures/Heart.png"},
-    {"ui.coin", "assets/textures/Coin.png"}
-});
-
-loadAllSoundBuffers(sound_buffers, { ... unchanged ... });
-
-//  This loads font data in the format {fontID, fileDirectory}.
-//  NOTE: there is no .ttf/.otf file in assets/fonts/ yet -- drop one in there and update the
-//  path below (it must be named to match) or the HUD's text will silently fail to render.
-loadAllFonts(fonts, {
-    {"main", "assets/fonts/main.ttf"}
-});
-
-textures.setSmooth(false);
-fonts.setSmooth(false);
-
-game.setIcon(textures["player.idle"]);
-game.open();
-
-//  This loads the player's persistent stats (health, coins, points, lives) from the save
-//  file, if one exists. If no save file is found, playerStats just keeps its default values.
-loadPlayerStats(playerStats);
-
-clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
-
-// Added: the ui.heart/ui.coin texture entries, the whole loadAllFonts(...) call, and the loadPlayerStats(playerStats); line.
-
-
-
-
-
-
-
-// 2. In test_level(), right before the main loop — build the HUD
-
-bool mouseDraggingPlayer = false;
-
-//  This builds every HUD sprite/text element (coin/lives icons, heart row, score text, etc)
-//  now that the required textures/font have been loaded and the sprite/text containers have
-//  been freshly cleared for this state.
-hud.build();
-        
-while (game.stableState(frameState)) {
-//Added: the hud.build(); call (and its comment).
-
-
-
-
-
-
-// 3. Inside the physics tick, right after player.tickPhysics(tps); — a temporary debug block:
-
-//  ------------------------------ TEMPORARY player stat debug controls ------------------------------
-//  These let you see the HUD respond to stat changes before collision/collectibles/enemies exist to
-//  actually trigger them. Delete this block once those systems are wired up to call playerStats
-//  directly (e.g. a Coin's applyEffect() calling playerStats.addCoins(), a Hazard tile calling
-//  playerStats.damage(), etc).
-{
-    static bool JKEY = false, LKEY = false, IKEY = false, OKEY = false, UKEY = false;
-    
-    if (game.pollForKey(sf::Keyboard::Key::J) && !JKEY) { playerStats.addCoins(1); }
-    JKEY = game.pollForKey(sf::Keyboard::Key::J);
-    
-    if (game.pollForKey(sf::Keyboard::Key::L) && !LKEY) { playerStats.damage(1); }
-    LKEY = game.pollForKey(sf::Keyboard::Key::L);
-    
-    if (game.pollForKey(sf::Keyboard::Key::I) && !IKEY) { playerStats.heal(1); }
-    IKEY = game.pollForKey(sf::Keyboard::Key::I);
-    
-    if (game.pollForKey(sf::Keyboard::Key::O) && !OKEY) { playerStats.addPoints(100); }
-    OKEY = game.pollForKey(sf::Keyboard::Key::O);
-    
-    if (game.pollForKey(sf::Keyboard::Key::U) && !UKEY) {
-        playerStats.damage(playerStats.health);
-        playerStats.loseLife();
-    }
-    UKEY = game.pollForKey(sf::Keyboard::Key::U);
-}
-//  ------------------------------ TEMPORARY player stat debug controls end ------------------------------
-// This whole block is new — delete it once real collision/collectible code is calling playerStats directly.
 
 
 
@@ -101,36 +13,9 @@ while (game.stableState(frameState)) {
 
 
 
-// 4. In the frontend program loop — update and actually render the HUD
-sound_lists["jump"].setPanShift(-180*(player.position.x - camera.position.x)/64);
-
-//  This refreshes every HUD element (health hearts, coins, points, lives, game over text)
-//  to match the current playerStats.
-hud.update(playerStats);
-
-//  This renders sprites onto the window.
-...
-game.refresh(true, sprites, texts);   // <-- was game.refresh(true, sprites); — texts wasn't being passed, so no text ever rendered before this
-// Added: hud.update(playerStats); and the texts argument to game.refresh(...).
 
 
 
-
-
-
-// 5. After the loop ends — save on exit
-
-//  This saves the player's current stats (health, coins, points, lives) back to the save file
-//  so they persist the next time the game is launched.
-savePlayerStats(playerStats);
-
-clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
-
-//Added: the savePlayerStats(playerStats); line, right before the existing clearall(...).
-//Everything else in main.cpp (the player entity setup, animation states, parallax, camera logic) is untouched.
-
-
-// ------------------------- Araceli Part End ---------------------------------
 
 //  This namespace will contain every state of the game, like levels and menus.
 namespace frame {
@@ -152,6 +37,13 @@ int main() {
 namespace frame {
 	//  This state controls what happens when the application starts.
 	void start_application() {
+		//  This loads font data in the format {fontID, fileDirectory}.
+		//  NOTE: there is no .ttf/.otf file in assets/fonts/ yet -- drop one in there and update the
+		//  path below (it must be named to match) or the HUD's text will silently fail to render.
+		loadAllFonts(fonts, {
+		    {"main", "assets/fonts/main.ttf"}
+		});
+		
 		//  This loads textures in the format {textureID, fileDirectory}.
 		loadAllTextures(textures, {
 			{"player.idle", "assets/textures/player/idle.png"},
@@ -168,13 +60,17 @@ namespace frame {
 			{"hills2", "assets/textures/hills2.png"},
 			{"clouds", "assets/textures/clouds.png"},
 			{"mountains", "assets/textures/mountains.png"},
-			{"sun", "assets/textures/sun.png"}
+			{"sun", "assets/textures/sun.png"},
+		    {"ui.heart", "assets/textures/Heart.png"},
+		    {"ui.coin", "assets/textures/Coin.png"},
+			{"ui.player", "assets/textures/player/head.png"}
 		});
 		
 		//  This loads sound data in the format {soundBufferID, fileDirectory}.
 		loadAllSoundBuffers(sound_buffers, {
 			{"jump", "assets/sounds/jump.ogg"},
-			{"skid", "assets/sounds/skid.ogg"}
+			{"skid", "assets/sounds/skid.ogg"},
+			{"block_hit", "assets/sounds/block_hit.ogg"}
 		});
 		
 		//  This stops everything from looking blurry.
@@ -187,6 +83,8 @@ namespace frame {
 		
 		//  This clears everything (like sprites, music, and sounds) from the global buffers EXCEPT for textures, sound buffers, and fonts.
 		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+		
+		loadPlayerStats(playerStats);
 		
 		//  If the game window is stable, the state moves to test_level.
 		if (game.stableState()) {
@@ -209,30 +107,31 @@ namespace frame {
 		//  This is just the amount of time that passes between ticks.
 		const double DELTA = 1.0/tps;
 		
+		Level level("level1");
+		level.loadLevel();
+		
 		//  This starts a stopwatch that accumulates over the main window loop then gets analyzed in the main game loop/physics to check how many times the physics should be calculated.
 		fstopwatches.start("accumulated_game_time");
 		
 		//  This adds a player sprite and a sky sprite.
-		sprites.add("player", textures["player.idle"], 0.0);
-		sprites.add("ground", textures["ground"], -1.0).add_tag("repeated_sprite").add_tag("repeated_sprite.ground");
-		sprites.add("hills1", textures["hills1"], -2.0);
-		sprites.add("hills2", textures["hills2"], -3.0);
-		sprites.add("clouds1", textures["clouds"], -4.0).setOpacity(0.85);
+		sprites.add("player", textures["player.idle"], 0.0).add_tag("level.darken");
+		sprites.add("ground", textures["ground"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.ground");
+		sprites.add("hills1", textures["hills1"], -2.0).add_tag("level.darken");
+		sprites.add("hills2", textures["hills2"], -3.0).add_tag("level.darken");
+		sprites.add("clouds1", textures["clouds"], -4.0).setOpacity(0.85).add_tag("level.darken");
 		sprites.add("mountains", textures["mountains"], -5.0);
 		sprites.add("clouds2", textures["clouds"], -6.0).setOpacity(0.4);
 		sprites.add("sun", textures["sun"], -7.0);
 		sprites.add("sky", textures["sky"], -8.0);
 		
-		vector<ExtendedSprite*> sortedSprites = sprites.getExtendedVector();
-		
 		//  This adds a new sound list to push sounds into called "jump."
-		sound_lists.add("jump");
-		sound_lists["jump"].setVolume(sounds.getVolume());
+		sound_lists.add("sound_effects");
+		sound_lists["sound_effects"].setVolume(sounds.getVolume());
 		
 		sounds.play("skid", sound_buffers["skid"], 0.0, true, true);
 		
 		//  This plays music.
-		musics.play("music", reinterpret_cast<const char*>(assets["assets/sounds/music.ogg"].data()), assets["assets/sounds/music.ogg"].size(), 0.3, true, true)["music"].setLoopPoints_ms(2398.6, musics["music"].getDuration_ms(), false);
+		musics.play("music", reinterpret_cast<const char*>(assets[level.musicPath].data()), assets[level.musicPath].size(), 0.3, true, true)["music"].setLoopPoints_sec(level.musicLoopStart, musics["music"].getDuration_sec(), false).setVolume(level.musicVolume * sounds.getVolume());
 		
 		//  This sets the camera to width 24 and position (0, 0).
 		ViewPort camera = ViewPort(24, {0.0, 0.0});
@@ -245,12 +144,12 @@ namespace frame {
 			{ "clouds1", ParallaxInstruction("clouds1", "clouds", 12, {48, 21.6}, 0.0, true, true).setApparentPosition({16, 10.8}, camera.position).fitLoopToViewPort(camera) },
 			{ "mountains", ParallaxInstruction("mountains", "mountains", 35, {48, 27}, 0.0, true, false).setApparentPosition({24, 13.5}, camera.position).fitLoopToViewPort(camera) },
 			{ "clouds2", ParallaxInstruction("clouds2", "clouds", 45, {24, 10.8}, 0.0, true, true).setApparentPosition({12, 5.4}, camera.position).fitLoopToViewPort(camera) },
-			{ "sun", ParallaxInstruction("sun", "sun", 200, {12, 12}, 0.0, false, false).setApparentPosition({8, 12}, camera.position).fitLoopToViewPort(camera) },
+			{ "sun", ParallaxInstruction("sun", "sun", 500, {56, 56}, 0.0, false, false).setApparentPosition({8, 6}, camera.position).fitLoopToViewPort(camera) },
 			{ "sky", ParallaxInstruction("sky", "sky", 500, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera) }
 		};
 		
 		//  This creates a player entity.
-		Entity player = Entity({1.5, 1.7}, {1.0, 2.0}, {0.0, -56.0}, 8, 14.0, 1.6, 2);
+		Entity player = Entity(EntityBehaviorTypes::Player, level.playerStartPosition + Vec2(0.0, 1.0), {1.0, 2.0}, {0.0, -56.0}, 8, 14.2, 1.6, 2);
 		player.accelerationConstJumpingMultiplier.y = 0.32;
 		player.maxJumpBufferFrames = tps/3;
 		player.skidMultiplier = 0.35;
@@ -285,8 +184,15 @@ namespace frame {
 			}
 		}, "idle");
 		
+		//  Here for debugging purposes.
 		bool mouseDraggingPlayer = false;
-				
+		bool JKEY = false, LKEY = false, IKEY = false, OKEY = false, UKEY = false;
+		
+		//  This builds every HUD sprite/text element (coin/lives icons, heart row, score text, etc)
+		//  now that the required textures/font have been loaded and the sprite/text containers have
+		//  been freshly cleared for this state.
+		hud.build();
+		
 		while (game.stableState(frameState)) {
 			//  This checks if the window is trying to close.
 			while (optional frameEvent = game.window->pollEvent()) {
@@ -322,13 +228,44 @@ namespace frame {
 				
 				//  This ticks the movement physics of the player entity.
 				player.tickPhysics(tps);
+				player.resolveBlockCollision(level.tilemap);
+				
+				//  ------------------------------ TEMPORARY player stat debug controls ------------------------------
+				//  These let you see the HUD respond to stat changes before collision/collectibles/enemies exist to
+				//  actually trigger them. Delete this block once those systems are wired up to call playerStats
+				//  directly (e.g. a Coin's applyEffect() calling playerStats.addCoins(), a Hazard tile calling
+				//  playerStats.damage(), etc).
+			    
+			    
+			    if (game.pollForKey(sf::Keyboard::Key::J) && !JKEY) { playerStats.addCoins(1); }
+			    JKEY = game.pollForKey(sf::Keyboard::Key::J);
+			    
+			    if (game.pollForKey(sf::Keyboard::Key::L) && !LKEY) { playerStats.damage(1); }
+			    LKEY = game.pollForKey(sf::Keyboard::Key::L);
+			    
+			    if (game.pollForKey(sf::Keyboard::Key::I) && !IKEY) { playerStats.heal(1); }
+			    IKEY = game.pollForKey(sf::Keyboard::Key::I);
+			    
+			    if (game.pollForKey(sf::Keyboard::Key::O) && !OKEY) { playerStats.addPoints(100); }
+			    OKEY = game.pollForKey(sf::Keyboard::Key::O);
+			    
+			    if (game.pollForKey(sf::Keyboard::Key::U) && !UKEY) {
+			        playerStats.damage(playerStats.health);
+			        playerStats.loseLife();
+			    }
+			    UKEY = game.pollForKey(sf::Keyboard::Key::U);
+				//  ------------------------------ TEMPORARY player stat debug controls end ------------------------------
+				// This whole block is new — delete it once real collision/collectible code is calling playerStats directly.
 				
 //  ------------------------------ Backend Game Loop Ends Here ------------------------------
 				
 				
 //  ------------------------------ Frontend Game Loop Starts Here ------------------------------
 				if (player.is_jumping_triggered()) {
-					sound_lists["jump"].add(sound_buffers["jump"], 0.4f, 0.0f, 1, 1.0, true);
+					sound_lists["sound_effects"].add(sound_buffers["jump"], 0.4f, 0.0f, 1, 1.0, true);
+				}
+				if (player.head_hit_object_trigerred()) {
+					sound_lists["sound_effects"].add(sound_buffers["block_hit"], 0.4f, 0.0f, 1, 1.0, true);
 				}
 				
 				parallaxSprites["clouds1"].setActualPosition(parallaxSprites["clouds1"].getActualPosition() + Vec2(2, 0)/tps);
@@ -345,8 +282,22 @@ namespace frame {
 //  ------------------------------ Frontend Program Loop Starts Here ------------------------------	
 			//  This centers the camera position to the player position without the camera clipping out of bounds.
 			if (!mouseDraggingPlayer) {
-				camera.position.x = player.position.x < camera.getPerceivedDimensions(game.resolution).x/2 ? camera.getPerceivedDimensions(game.resolution).x/2 : player.position.x;
-				camera.position.y = player.position.y < camera.getPerceivedDimensions(game.resolution).y/2 ? camera.getPerceivedDimensions(game.resolution).y/2 : player.position.y;
+				camera.position = player.position;
+				
+				if (player.position.x < camera.getPerceivedDimensions(game.resolution).x/2) {
+					camera.position.x = camera.getPerceivedDimensions(game.resolution).x/2;
+				}
+				if (camera.position.x + camera.getPerceivedDimensions(game.resolution).x/2 > level.tilemap.maxWidth) {
+					camera.position.x = level.tilemap.maxWidth - camera.getPerceivedDimensions(game.resolution).x/2;
+				}
+				
+				if (player.position.y < camera.getPerceivedDimensions(game.resolution).y/2) {
+					camera.position.y = camera.getPerceivedDimensions(game.resolution).y/2;
+				}
+				if (camera.position.y + camera.getPerceivedDimensions(game.resolution).y/2 > level.tilemap.maxHeight) {
+					camera.position.y = level.tilemap.maxHeight - camera.getPerceivedDimensions(game.resolution).y/2;
+				}
+				
 			}
 			
 			if (sprites["player"].mouseLeftHeld(game)) {
@@ -360,7 +311,7 @@ namespace frame {
 			}
 			
 			const AnimationFrame& playerAnimationFrame = player.animation_state.getAnimationFrame();
-			camera.setInViewport(game, sprites["player"].setTexture(textures[playerAnimationFrame.TextureID]), player.position + playerAnimationFrame.offset*Vec2(player.is_facing_right() ? 1.0 : -1.0, 1.0) + playerAnimationFrame.size*Vec2(player.is_facing_left()*2.0, 0.0), playerAnimationFrame.size*Vec2(player.is_facing_right() ? 1.0 : -1.0, 1.0));
+			camera.setInViewport(game, sprites["player"].setTexture(textures[playerAnimationFrame.TextureID]), player.position + playerAnimationFrame.offset*Vec2(player.is_facing_right() ? 1.0 : -1.0, 1.0), playerAnimationFrame.size*Vec2(player.is_facing_right() ? 1.0 : -1.0, 1.0));
 			
 			for (const auto& currentPS : parallaxSprites) {
 				camera.setInViewport(game, sprites[currentPS.second.spriteID], currentPS.second.getApparentPosition(camera.position), currentPS.second.getApparentSize());
@@ -370,28 +321,57 @@ namespace frame {
 			sounds["skid"].setVolume(player.is_skidding() ? 1.0 : 0.0);
 			
 			//  This clears the "jump" sound list of inactive sounds.
-			if (sound_lists["jump"].inactive()) {
-				sound_lists["jump"].clean();
+			if (sound_lists["sound_effects"].inactive()) {
+				sound_lists["sound_effects"].clean();
 			}
 			//  This shifts where you hear the sounds in the "jump" sound list.
-			sound_lists["jump"].setPanShift(-180*(player.position.x - camera.position.x)/64);
+			sound_lists["sound_effects"].setPanShift(-180*(player.position.x - camera.position.x)/64);
 			
-			//  This renders sprites onto the window.
+			//  This refreshes every HUD element (health hearts, coins, points, lives, game over text)
+			//  to match the current playerStats.
+			hud.update(playerStats);
+			
+			vector<ExtendedSprite*> sortedSprites = sprites.getExtendedVector();
+			vector<ExtendedText*> sortedTexts = texts.getExtendedVector();
+		
+			//  This renders sprites and texts onto the window.
+			
+			array<array<size_t, 2>, 2> cameraIndexRangeContext = level.tilemap.resolveIndexRangeContext(camera.position, camera.getPerceivedDimensions(game.resolution));
 			
 			for (ExtendedSprite*& spritePtr : sortedSprites) {
 				if (spritePtr) {
-					ExtendedSprite& currentSprite = *spritePtr;
+					if (spritePtr->has_tag("level.darken")) {
+						spritePtr->setTint(level.darknessTint.r/255.0, ColorChannel::Red);
+						spritePtr->setTint(level.darknessTint.g/255.0, ColorChannel::Green);
+						spritePtr->setTint(level.darknessTint.b/255.0, ColorChannel::Blue);
+					}
 					
-					if (currentSprite.has_tag("repeated_sprite")) {
-						if (currentSprite.has_tag("repeated_sprite.ground")) {
-							//  Render multiple ground instances here
+					if (spritePtr->has_tag("repeated_sprite")) {
+						if (spritePtr->has_tag("repeated_sprite.tile")) {
+							for (size_t Y = cameraIndexRangeContext[0][1]; Y < cameraIndexRangeContext[1][1]; ++Y) {
+								for (size_t X = cameraIndexRangeContext[0][0]; X < cameraIndexRangeContext[1][0]; ++X) {
+									if (spritePtr->has_tag("repeated_sprite.tile.ground") && level.tilemap.getTileCopy(X, Y).isGround()) {
+										camera.setInViewport(game, sprites["ground"], Vec2(X + 0.5, Y + 0.5));
+										game.ExtendedDraw(spritePtr);
+									}
+								}
+							}
 						}
 					} else {
-						game.ExtendedDraw(&currentSprite);
+						game.ExtendedDraw(spritePtr);
 					}
 				}
 			}
-			game.refresh(true, sprites);
+			for (ExtendedText*& textPtr : sortedTexts) {
+				if (textPtr->has_tag("level.darken")) {
+					textPtr->setTint(level.darknessTint.r/255.0, ColorChannel::Red);
+					textPtr->setTint(level.darknessTint.g/255.0, ColorChannel::Green);
+					textPtr->setTint(level.darknessTint.b/255.0, ColorChannel::Blue);
+				}
+					
+				game.ExtendedDraw(textPtr);
+			}
+			game.window->display();
 //  ------------------------------ Frontend Program Loop Ends Here ------------------------------
 			
 		}
@@ -419,6 +399,11 @@ namespace frame {
 		
 		//  This clears all global buffers.
 		clearall();
+		
+		//  This saves the player's current stats (health, coins, points, lives) back to the save file
+		//  so they persist the next time the game is launched.
+		savePlayerStats(playerStats);
+		
 		return;
 	}
 }

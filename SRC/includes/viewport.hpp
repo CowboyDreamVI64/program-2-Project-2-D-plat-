@@ -65,7 +65,10 @@ struct ViewPort {
 		//  Alters the size and position of drawables like sprites and texts to have a certain position and size when
 		//  rendered depending on where in the viewport it is. This allows lengths to be unit-based rather than pixel-based.
 		template <typename ExtendedDrawable>
-		ViewPort& setInViewport(const ExtendedWindow& window, ExtendedDrawable& drawable, const Vec2& drawablePos, const Vec2& drawableScale = 1.0) {
+		ViewPort& setInViewport(const ExtendedWindow& window, ExtendedDrawable& drawable, Vec2 drawablePos, Vec2 drawableScale = 1.0) {
+			drawablePos.x += drawableScale.x < 0.0 ? -2*drawableScale.x : 0.0;
+			drawablePos.y += drawableScale.y < 0.0 ? -2*drawableScale.y : 0.0;
+			
 			if (SIZE == 0) {
 				return *this;
 			}
