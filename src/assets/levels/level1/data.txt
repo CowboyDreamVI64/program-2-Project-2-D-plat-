@@ -1,0 +1,5 @@
+name=Test Level
+musicID=flower_castle
+musicVolume=0.5
+musicLoopStart=7.111
+darknessTint=225,208,224
