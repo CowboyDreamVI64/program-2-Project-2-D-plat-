@@ -1,5 +1,0 @@
-name=Test Level
-musicID=rude_buster
-musicVolume=0.2
-musicLoopStart=13.713
-darknessTint=225,208,224
