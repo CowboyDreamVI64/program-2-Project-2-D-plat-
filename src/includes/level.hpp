@@ -142,7 +142,7 @@ class Level {
 					darknessTintEnd = darknessTint;
 				}
 			} else {
-				darknessTint = darknessTint;
+				darknessTintEnd = darknessTint;
 			}
 			
 			if (levelData.count("name") != 0) {
