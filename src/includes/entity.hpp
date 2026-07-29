@@ -304,7 +304,7 @@ class Entity {
 			if (ON_GROUND) {
 				if (GROUND_TIME >= 0.2) {
 					GROUND_TIME = 0.0;
-					if (behaviorType == EntityBehaviorTypes::Player) {
+					if (behaviorType == EntityBehaviorTypes::Player && !IS_CROUCHING) {
 						LAST_SAFE_POSITION = position;
 					}
 				}
@@ -584,6 +584,13 @@ class Entity {
 		}
 		
 		Entity& resolveBlockCollision(const TileMap& inputTileMap) {
+			if (position.x > 0.3 - HITBOX.x/2 + inputTileMap.maxWidth) {
+				position.x = 0.3 - HITBOX.x/2 + inputTileMap.maxWidth;
+				if (velocity.x > 0) {
+					velocity.x = 0;
+				}
+			}
+			
 			const array<array<size_t, 2>, 2> entityIndexRangeContext = inputTileMap.resolveIndexRangeContext(position, HITBOX);
 					
 			for (size_t Y = entityIndexRangeContext[0][1]; Y < entityIndexRangeContext[1][1]; ++Y) {

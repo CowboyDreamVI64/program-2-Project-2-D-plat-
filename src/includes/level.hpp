@@ -22,6 +22,7 @@ class Level {
 		double musicVolume;
 		string musicPath;
 		sf::Color darknessTint;
+		sf::Color darknessTintEnd;
 		
 		double cameraWidth;
 		double cameraHeight;
@@ -131,6 +132,17 @@ class Level {
 				}
 			} else {
 				darknessTint = sf::Color::White;
+			}
+			
+			if (levelData.count("darknessTintEnd") != 0) {
+				vector<string> darknessTintsEnd = parseCommaList(levelData.at("darknessTintEnd"));
+				try {
+					darknessTintEnd = sf::Color(stoi(darknessTintsEnd.at(0)), stoi(darknessTintsEnd.at(1)), stoi(darknessTintsEnd.at(2)), 255);
+				} catch (...) {
+					darknessTintEnd = darknessTint;
+				}
+			} else {
+				darknessTint = darknessTint;
 			}
 			
 			if (levelData.count("name") != 0) {

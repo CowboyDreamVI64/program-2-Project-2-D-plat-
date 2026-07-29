@@ -82,9 +82,12 @@ namespace frame {
 			{"background.cherry_leaves", "assets/textures/background/cherry_leaves.png"},
 			{"background.autumn_hills_1", "assets/textures/background/autumn_hills0.png"},
 			{"background.autumn_hills_2", "assets/textures/background/autumn_hills1.png"},
+			{"background.cherry_hills_1", "assets/textures/background/cherry_hills0.png"},
+			{"background.cherry_hills_2", "assets/textures/background/cherry_hills1.png"},
 			{"background.green_hills_1", "assets/textures/background/green_hills0.png"},
 			{"background.green_hills_2", "assets/textures/background/green_hills1.png"},
 			{"background.setting_sky", "assets/textures/background/setting_sky.png"},
+			{"background.cherry_sky", "assets/textures/background/cherry_sky.png"},
 			{"background.setting_mountains", "assets/textures/background/setting_mountains.png"},
 			{"background.setting_sun", "assets/textures/background/setting_sun.png"},
 			{"background.normal_sky", "assets/textures/background/normal_sky.png"},
@@ -148,7 +151,78 @@ namespace frame {
 	
 	void level_transition() {
 		levels[CURRENT_LEVEL_ID].loadLevel();
-		active_level();
+		
+		bool frameState = true;
+		bool closeWindow = false;
+		
+		fstopwatches.start("frame_time");
+		
+		texts.add("level_name", fonts["main"]).setString("Level  " + levels[CURRENT_LEVEL_ID].levelName).setFillColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.035).center(game).offset({0.0, -7.0}).hide();
+		
+		texts.add("lives", fonts["main"]).setString(" x " + to_string(TOTAL_LIVES)).setFillColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.035).center(game).offset({0.45, -3.5}).hide();
+		sprites.add("head", textures["ui.player"]).resizeToFit(texts["lives"]).align(texts["lives"].getGlobalBounds(), Align::CenterLeft, Align::CenterLeft).offset({-0.05, 0.0}).hide();
+		
+		texts.add("coins", fonts["main"]).setString("x " + to_string(TOTAL_COINS)).setFillColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.025).hide();
+		sprites.add("coin", textures["ui.coin"]).resizeToFit(texts["coins"]).align(game.getGlobalBounds(), Align::TopLeft, Align::BottomRight).offset(game, {0.02, 0.02}).hide();
+		texts["coins"].align(sprites["coin"].getGlobalBounds(), Align::CenterRight, Align::CenterRight);
+		
+		texts.add("score", fonts["main"], 1.0).setString(string(to_string(TOTAL_SCORE).size() < SCORE_DISPLAY_PADDING ? SCORE_DISPLAY_PADDING - to_string(TOTAL_SCORE).size() : 0, '0') + to_string(TOTAL_SCORE)).setFillColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.025).align(game.getGlobalBounds(), Align::TopRight, Align::TopRight).offset({-1.0, 0.0}).offset(game, {-0.02, 0.04}).hide();
+		
+		for (size_t i = 0; i < TOTAL_HEALTH; ++i) {
+			sprites.add("heart." + to_string(i), textures["ui.heart"]).resizeToFit(sprites["coin"]).multiply(0.75).align(sprites["coin"].getGlobalBounds(), Align::BottomLeft, Align::BottomRight).offset({static_cast<float>(i*1.15), 0.3}).hide();
+		}
+		
+		while (game.stableState(frameState)) {
+			while (optional frameEvent = game.window->pollEvent()) {
+				if (game.pollForClosure(frameEvent)) {
+					frameState = false;
+					closeWindow = true;
+				}
+			}
+			if (game.pollForF11()) {
+				game.toggleFullscreen();
+			}
+			if (game.pollForEscape()) {
+				frameState = false;
+				closeWindow = true;
+			}
+			
+			if (fstopwatches["frame_time"].frame < 0.2) {
+			} else if (fstopwatches["frame_time"].frame < 3.0) {
+				sprites["head"].unhide();
+				sprites["coin"].unhide();
+				texts["lives"].unhide();
+				texts["level_name"].unhide();
+				texts["coins"].unhide();
+				texts["score"].unhide();
+				for (size_t i = 0; i < TOTAL_HEALTH; ++i) {
+					sprites["heart." + to_string(i)].unhide();
+				}
+			} else if (fstopwatches["frame_time"].frame < 3.5) {
+				sprites["head"].hide();
+				sprites["coin"].hide();
+				texts["lives"].hide();
+				texts["level_name"].hide();
+				texts["coins"].hide();
+				texts["score"].hide();
+				for (size_t i = 0; i < TOTAL_HEALTH; ++i) {
+					sprites["heart." + to_string(i)].hide();
+				}
+			} else {
+				frameState = false;
+			}
+			
+			game.refresh(true, sprites, texts);
+			fstopwatches.elapse(1.0f/game.framerate);
+		}
+		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+		
+		if (game.stableState(!closeWindow)) {
+			active_level();
+		} else if (closeWindow) {
+			//  This move to the end_application state if the window is trying to close.
+			end_application();
+		}
 	}
 	
 	//  This state is a test level.
@@ -184,13 +258,17 @@ namespace frame {
 		sprites.add("background.autumn_hills_2", textures["background.autumn_hills_2"], -3.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.autumn_hills_2"));
 		sprites.add("background.green_hills_1", textures["background.green_hills_1"], -2.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.green_hills_1"));
 		sprites.add("background.green_hills_2", textures["background.green_hills_2"], -3.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.green_hills_2"));
+		sprites.add("background.cherry_hills_1", textures["background.cherry_hills_1"], -2.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.cherry_hills_1"));
+		sprites.add("background.cherry_hills_2", textures["background.cherry_hills_2"], -3.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.cherry_hills_2"));
 		sprites.add("background.clouds_1", textures["background.clouds"], -4.0).setOpacity(0.85).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.clouds_1"));
 		sprites.add("background.clouds_2", textures["background.clouds"], -6.0).setOpacity(0.4).setVisibility(level.spriteIsEnabled("background.clouds_2"));
 		sprites.add("background.autumn_leaves", textures["background.autumn_leaves"], 1.0).setOpacity(0.3).setVisibility(level.spriteIsEnabled("background.autumn_leaves"));
 		sprites.add("background.cherry_leaves", textures["background.cherry_leaves"], 1.0).setOpacity(0.3).setVisibility(level.spriteIsEnabled("background.cherry_leaves"));
 		sprites.add("background.setting_mountains", textures["background.setting_mountains"], -5.0).setVisibility(level.spriteIsEnabled("background.setting_mountains"));
 		sprites.add("background.setting_sun", textures["background.setting_sun"], -7.0).setVisibility(level.spriteIsEnabled("background.setting_sun"));
+		sprites.add("background.cherry_sun", textures["background.setting_sun"], -7.0).setVisibility(level.spriteIsEnabled("background.cherry_sun"));
 		sprites.add("background.setting_sky", textures["background.setting_sky"], -8.0).setVisibility(level.spriteIsEnabled("background.setting_sky"));
+		sprites.add("background.cherry_sky", textures["background.cherry_sky"], -8.0).setVisibility(level.spriteIsEnabled("background.cherry_sky"));
 		sprites.add("background.normal_mountains", textures["background.normal_mountains"], -5.0).setVisibility(level.spriteIsEnabled("background.normal_mountains"));
 		sprites.add("background.mario_mountains", textures["background.mario_mountains"], -5.0).setVisibility(level.spriteIsEnabled("background.mario_mountains"));
 		sprites.add("background.normal_sun", textures["background.normal_sun"], -7.0).setVisibility(level.spriteIsEnabled("background.normal_sun"));
@@ -222,13 +300,17 @@ namespace frame {
 			{ "background.autumn_hills_2", ParallaxInstruction("background.autumn_hills_2", "background.autumn_hills_2", 10, Vec2(32, 18)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.green_hills_1", ParallaxInstruction("background.green_hills_1", "background.green_hills_1", 5, Vec2(32, 18)*backgroundMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.green_hills_2", ParallaxInstruction("background.green_hills_2", "background.green_hills_2", 10, Vec2(32, 18)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.cherry_hills_1", ParallaxInstruction("background.cherry_hills_1", "background.cherry_hills_1", 3, Vec2(32, 18)*backgroundMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.cherry_hills_2", ParallaxInstruction("background.cherry_hills_2", "background.cherry_hills_2", 8, Vec2(48, 27)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(24, 16)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.clouds_1", ParallaxInstruction("background.clouds_1", "background.clouds", 12, Vec2(48, 21.6)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(16, 10.8)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.autumn_leaves", ParallaxInstruction("background.autumn_leaves", "background.autumn_leaves", 0.75, Vec2(12, 12)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(6, 6)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
-			{ "background.cherry_leaves", ParallaxInstruction("background.cherry_leaves", "background.cherry_leaves", 0.75, Vec2(12, 12)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(6, 6)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.cherry_leaves", ParallaxInstruction("background.cherry_leaves", "background.cherry_leaves", 0.5, Vec2(10, 10)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(5, 5)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.clouds_2", ParallaxInstruction("background.clouds_2", "background.clouds", 45, Vec2(24, 10.8)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(12, 5.4)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.setting_mountains", ParallaxInstruction("background.setting_mountains", "background.setting_mountains", 35, Vec2(48, 27)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(24, 13.5)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.setting_sun", ParallaxInstruction("background.setting_sun", "background.setting_sun", 500, Vec2(56, 56)*level.backgroundSpriteMultiplier, 0.0, false, false).setApparentPosition(Vec2(8, 6)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.cherry_sun", ParallaxInstruction("background.cherry_sun", "background.setting_sun", 90, Vec2(56, 56)*level.backgroundSpriteMultiplier, 0.0, false, false).setApparentPosition(Vec2(8, 13)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.setting_sky", ParallaxInstruction("background.setting_sky", "background.setting_sky", 500, Vec2(64, 36)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(32, 18)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.cherry_sky", ParallaxInstruction("background.cherry_sky", "background.cherry_sky", 500, Vec2(64, 36)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(32, 18)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.normal_mountains", ParallaxInstruction("background.normal_mountains", "background.normal_mountains", 35, Vec2(48, 27)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(24, 13.5)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.mario_mountains", ParallaxInstruction("background.mario_mountains", "background.mario_mountains", 35, Vec2(24, 13.5)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(12, 6.75)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
 			{ "background.normal_sun", ParallaxInstruction("background.normal_sun", "background.normal_sun", 500, Vec2(56, 56)*level.backgroundSpriteMultiplier, 0.0, false, false).setApparentPosition(Vec2(8, 12)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
@@ -287,10 +369,6 @@ namespace frame {
 			AnimationFrame("collectable.coin.4", 0.12, 1.5),
 			AnimationFrame("collectable.coin.5", 0.12, 1.5)
 		}, true);
-		
-		//  Here for debugging purposes.
-		bool mouseDraggingPlayer = false;
-		bool JKEY = false, LKEY = false, IKEY = false, OKEY = false, UKEY = false;
 		
 		//  This builds every HUD sprite/text element (coin/lives icons, heart row, score text, etc)
 		//  now that the required textures/font have been loaded and the sprite/text containers have
@@ -437,7 +515,7 @@ namespace frame {
 					parallaxSprites["background.clouds_1"].setActualPosition(parallaxSprites["background.clouds_1"].getActualPosition() + Vec2(2, 0)/tps);
 					parallaxSprites["background.clouds_2"].setActualPosition(parallaxSprites["background.clouds_2"].getActualPosition() + Vec2(2, 0)/tps);
 					parallaxSprites["background.autumn_leaves"].setActualPosition(parallaxSprites["background.autumn_leaves"].getActualPosition() + Vec2(-1, -1)/tps);
-					parallaxSprites["background.cherry_leaves"].setActualPosition(parallaxSprites["background.cherry_leaves"].getActualPosition() + Vec2(-1.5, -1.5)/tps);
+					parallaxSprites["background.cherry_leaves"].setActualPosition(parallaxSprites["background.cherry_leaves"].getActualPosition() + Vec2(-2, -1.5)/tps);
 					
 					player.tickAnimation(tps);
 					player.updateAnimationState();
@@ -467,7 +545,7 @@ namespace frame {
 			}
 
 			//  This centers the camera position to the player position without the camera clipping out of bounds.
-			if (!mouseDraggingPlayer && player.health() > 0) {
+			if (player.health() > 0) {
 				camera.position = player.position + Vec2(0.0, player.is_crouching() ? player.hitbox().y/2 : 0.0);
 				
 				if (player.position.x < camera.getPerceivedDimensions(game.resolution).x/2) {
@@ -484,16 +562,6 @@ namespace frame {
 					camera.position.y = level.tilemap.maxHeight - camera.getPerceivedDimensions(game.resolution).y/2;
 				}
 				
-			}
-			
-			if (sprites["player"].mouseLeftHeld(game)) {
-				mouseDraggingPlayer = true;
-			} else if (!game.mouseLeftHeld()) {
-				mouseDraggingPlayer = false;
-			}
-			if (mouseDraggingPlayer) {
-				player.velocity = (camera.getPerceivedDimensions()*game.getMousePosition()*Vec2(1.0, -0.5) + camera.position - player.position)*30;
-				player.position = camera.getPerceivedDimensions()*game.getMousePosition()*Vec2(1.0, -0.5) + camera.position;
 			}
 			
 			const AnimationFrame& playerAnimationFrame = player.animation_state.getAnimationFrame();
@@ -524,13 +592,17 @@ namespace frame {
 			
 			array<array<size_t, 2>, 2> cameraIndexRangeContext = level.tilemap.resolveIndexRangeContext(camera.position, camera.getPerceivedDimensions(game.resolution));
 			
+			const uint8_t DARKNESS_TINT_R = level.darknessTintEnd.r*camera.position.x/level.tilemap.maxWidth + level.darknessTint.r*(1.0 - camera.position.x/level.tilemap.maxWidth);
+			const uint8_t DARKNESS_TINT_G = level.darknessTintEnd.g*camera.position.x/level.tilemap.maxWidth + level.darknessTint.g*(1.0 - camera.position.x/level.tilemap.maxWidth);
+			const uint8_t DARKNESS_TINT_B = level.darknessTintEnd.b*camera.position.x/level.tilemap.maxWidth + level.darknessTint.b*(1.0 - camera.position.x/level.tilemap.maxWidth);
+			
 			game.window->clear();
 			for (ExtendedSprite*& spritePtr : sortedSprites) {
 				if (spritePtr) {
 					if (spritePtr->has_tag("level.darken")) {
-						spritePtr->setTint(level.darknessTint.r/255.0, ColorChannel::Red);
-						spritePtr->setTint(level.darknessTint.g/255.0, ColorChannel::Green);
-						spritePtr->setTint(level.darknessTint.b/255.0, ColorChannel::Blue);
+						spritePtr->setTint(DARKNESS_TINT_R/255.0, ColorChannel::Red);
+						spritePtr->setTint(DARKNESS_TINT_G/255.0, ColorChannel::Green);
+						spritePtr->setTint(DARKNESS_TINT_B/255.0, ColorChannel::Blue);
 					}
 					
 					if (spritePtr->has_tag("player_sprite")) {
@@ -610,9 +682,9 @@ namespace frame {
 			}
 			for (ExtendedText*& textPtr : sortedTexts) {
 				if (textPtr->has_tag("level.darken")) {
-					textPtr->setTint(level.darknessTint.r/255.0, ColorChannel::Red);
-					textPtr->setTint(level.darknessTint.g/255.0, ColorChannel::Green);
-					textPtr->setTint(level.darknessTint.b/255.0, ColorChannel::Blue);
+					textPtr->setTint(DARKNESS_TINT_R/255.0, ColorChannel::Red);
+					textPtr->setTint(DARKNESS_TINT_G/255.0, ColorChannel::Green);
+					textPtr->setTint(DARKNESS_TINT_B/255.0, ColorChannel::Blue);
 				}
 					
 				game.ExtendedDraw(textPtr);
@@ -658,15 +730,90 @@ namespace frame {
 		TOTAL_SCORE = 0;
 		TOTAL_LIVES = 3;
 		TOTAL_HEALTH = 3;
-		game_menu();
+		
+		bool frameState = true;
+		bool closeWindow = false;
+		
+		fstopwatches.start("frame_time");
+		musics.play("game_over", reinterpret_cast<const char*>(assets["assets/sounds/music/game_over.ogg"].data()), assets["assets/sounds/music/game_over.ogg"].size(), sounds.getVolume()*0.3, true, false);
+		texts.add("game_over", fonts["main"], 1.0).setString("GAME OVER").setFillColor(sf::Color::White).setOutlineColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.05).center(game).offset(game, {0.0, -0.05});
+		
+		while (game.stableState(frameState)) {
+			while (optional frameEvent = game.window->pollEvent()) {
+				if (game.pollForClosure(frameEvent)) {
+					frameState = false;
+					closeWindow = true;
+				}
+			}
+			if (game.pollForF11()) {
+				game.toggleFullscreen();
+			}
+			if (game.pollForEscape()) {
+				frameState = false;
+				closeWindow = true;
+			}
+			
+			if (fstopwatches["frame_time"].frame > 6.0 || game.pollForKey(sf::Keyboard::Key::Space)) {
+				frameState = false;
+			}
+			
+			game.refresh(true, sprites, texts);
+			fstopwatches.elapse(1.0f/game.framerate);
+		}
+		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+		
+		if (game.stableState(!closeWindow)) {
+			game_menu();
+		} else if (closeWindow) {
+			//  This move to the end_application state if the window is trying to close.
+			end_application();
+		}
 	}
 	
 	void win_game() {
+		bool frameState = true;
+		bool closeWindow = false;
+		
+		fstopwatches.start("frame_time");
+		musics.play("game_win", reinterpret_cast<const char*>(assets["assets/sounds/music/game_win.ogg"].data()), assets["assets/sounds/music/game_win.ogg"].size(), sounds.getVolume()*0.6, true, true)["game_win"].setLoopPoints_sec(6.642, musics["game_win"].getDuration_sec(), false);
+		texts.add("game_win", fonts["main"], 1.0).setString("GAME COMPLETE!").setFillColor(sf::Color::White).setOutlineColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.05).center(game).offset(game, {0.0, -0.05});
+		texts.add("final_score_notice", fonts["main"], 1.0).setString("final score:").setFillColor(sf::Color::White).setOutlineColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.02).center(game).offset(game, {0.0, 0.15});
+		texts.add("final_score", fonts["main"], 1.0).setString(to_string(TOTAL_SCORE)).setFillColor(sf::Color::White).setOutlineColor(sf::Color::White).setCharacterSize(200).resizeToFit(game).multiply(0.025).center(game).offset(game, {0.0, 0.225});
+		
+		while (game.stableState(frameState)) {
+			while (optional frameEvent = game.window->pollEvent()) {
+				if (game.pollForClosure(frameEvent)) {
+					frameState = false;
+					closeWindow = true;
+				}
+			}
+			if (game.pollForF11()) {
+				game.toggleFullscreen();
+			}
+			if (game.pollForEscape()) {
+				frameState = false;
+				closeWindow = true;
+			}
+			
+			if (fstopwatches["frame_time"].frame > 30.0 || game.pollForKey(sf::Keyboard::Key::Space)) {
+				frameState = false;
+			}
+			
+			game.refresh(true, sprites, texts);
+			fstopwatches.elapse(1.0f/game.framerate);
+		}
+		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
+		
 		TOTAL_COINS = 0;
 		TOTAL_SCORE = 0;
 		TOTAL_LIVES = 3;
-		TOTAL_HEALTH = 3;	
-		game_menu();
+		TOTAL_HEALTH = 3;
+		
+		if (game.stableState(!closeWindow)) {
+			game_menu();
+		} else if (closeWindow) {
+			end_application();
+		}
 	}
 	
 	//  This state controls what happens when the application ends.
