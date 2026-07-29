@@ -22,6 +22,9 @@ class Level {
 		string musicPath;
 		sf::Color darknessTint;
 		
+		double cameraWidth;
+		double cameraHeight;
+		
 		bool clouds_1 = false;
 		bool clouds_2 = false;
 		bool autumn_hills_1 = false;
@@ -50,6 +53,7 @@ class Level {
 					if (tilemap.getTileCopy(X, Y).isEnemy()) {
 						Entity newEnemy = Entity(EntityBehaviorTypes::Enemy, 1.0, Vec2(X, Y) + 0.5, {1.0, 0.6}, {0.0, -48.0}, 2.5, 14.2);
 						newEnemy.snapToSpeed = true;
+						newEnemy.avoidEdge = true;
 						
 						if (frandom() > 0.5) {
 							newEnemy.constInput[1] = true;
@@ -153,6 +157,27 @@ class Level {
 				firstLevelID = levelData.at("firstLevelID");
 			} else {
 				firstLevelID = FIRST_LEVEL_ID;
+			}
+			
+			if (levelData.count("cameraWidth") != 0) {
+				try {
+					cameraWidth = stod(levelData.at("cameraWidth"));
+				} catch (...) {
+					cameraWidth = 24;
+				}
+			} else {
+				cameraWidth = 24;
+			}
+			
+			
+			if (levelData.count("cameraHeight") != 0) {
+				try {
+					cameraHeight = stod(levelData.at("cameraHeight"));
+				} catch (...) {
+					cameraHeight = 0;
+				}
+			} else {
+				cameraHeight = 0;
 			}
 			
 			return *this;

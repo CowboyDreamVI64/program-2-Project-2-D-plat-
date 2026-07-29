@@ -271,6 +271,8 @@ class Entity {
 		//  If true, the entity can hold the jump input to keep jumping; else, the entity will need to stop inputting jump then reinput jump again.
 		bool autoJump = true;
 		
+		bool avoidEdge = false;
+		
 		//  The number of frames the entity's jump is valid for since input before the entity needs to reinput jump.
 		//  Only effective if autoJump is false.
 		size_t maxJumpBufferFrames = 0;
@@ -567,7 +569,7 @@ class Entity {
 		
 		Entity& resolveBlockCollision(const TileMap& inputTileMap) {
 			const array<array<size_t, 2>, 2> entityIndexRangeContext = inputTileMap.resolveIndexRangeContext(position, HITBOX);
-			
+					
 			for (size_t Y = entityIndexRangeContext[0][1]; Y < entityIndexRangeContext[1][1]; ++Y) {
 				for (size_t X = entityIndexRangeContext[0][0]; X < entityIndexRangeContext[1][0]; ++X) {
 					if (IS_CROUCHING && inputTileMap.getTileCopy(X,Y).isSolid()) {
@@ -577,8 +579,24 @@ class Entity {
 							}
 						}
 					}
+			
+					if (behaviorType == EntityBehaviorTypes::Enemy && avoidEdge && ON_GROUND) {
+						if (is_facing_right() && !inputTileMap.getTileCopy(X + 0.7 + HITBOX.x/2,Y - HITBOX.y/2).isSolid()) {
+							CollisionContext edgeCollision = CollisionContext::resolve(position, HITBOX, Vec2(X + 0.5 + HITBOX.x/2,Y - HITBOX.y/2) + 0.5, 1.0);
+							if (edgeCollision.collision) {
+								constInput[3] = false;
+								constInput[1] = true;
+							}
+						} else if (is_facing_left() && !inputTileMap.getTileCopy(X + 0.8 - HITBOX.x/2,Y - HITBOX.y/2).isSolid()) {
+							CollisionContext edgeCollision = CollisionContext::resolve(position, HITBOX, Vec2(X + 0.5 - HITBOX.x/2,Y - HITBOX.y/2) + 0.5, 1.0);
+							if (edgeCollision.collision) {
+								constInput[1] = false;
+								constInput[3] = true;
+							}
+						}
+					}
 					
-					const CollisionContext currentTileCollision = CollisionContext::resolve(position, HITBOX, Vec2(X,Y) + 0.5, 1.0);
+					CollisionContext currentTileCollision = CollisionContext::resolve(position, HITBOX, Vec2(X,Y) + 0.5, 1.0);
 					if (currentTileCollision.collision) {
 						if (behaviorType == EntityBehaviorTypes::Player && inputTileMap.getTileCopy(X,Y).isGoal()) {
 							if (!GOAL) {
@@ -627,6 +645,7 @@ class Entity {
 					}
 				}
 			}
+			
 			return *this;
 		}
 		

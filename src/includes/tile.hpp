@@ -199,11 +199,11 @@ class TileMap {
 			
 			array<array<size_t, 2>, 2> output;
 			//  Output: [0 for min, 1 for max][0 for x, 1 for y];
-			output[0][0] = pos.x - size.x/2 < 0 ? 0 : static_cast<size_t>(pos.x - size.x/2);
-			output[1][0] = pos.x + size.x/2 > maxWidth ? maxWidth : static_cast<size_t>(pos.x + size.x/2);
+			output[0][0] = pos.x - size.x/2 < 0 ? 0 : (pos.x - size.x/2 > maxWidth ? maxWidth : static_cast<size_t>(pos.x - size.x/2));
+			output[1][0] = pos.x + size.x/2 < 0 ? 0 : (pos.x + size.x/2 > maxWidth ? maxWidth : static_cast<size_t>(pos.x + size.x/2));
 			
-			output[0][1] = pos.y - size.y/2 < 0 ? 0 : static_cast<size_t>(pos.y - size.y/2);
-			output[1][1] = pos.y + size.y/2 > maxHeight ? maxHeight : static_cast<size_t>(pos.y + size.y/2);
+			output[0][1] = pos.y - size.y/2 < 0 ? 0 : (pos.y - size.y/2 > maxHeight ? maxHeight : static_cast<size_t>(pos.y - size.y/2));
+			output[1][1] = pos.y + size.y/2 < 0 ? 0 : (pos.y + size.y/2 > maxHeight ? maxHeight : static_cast<size_t>(pos.y + size.y/2));
 			
 			return output;
 		}

@@ -1,7 +1,8 @@
-name=1-1
+name=1-2
 musicID=flower_castle
 musicVolume=0.5
 musicLoopStart=7.111
 darknessTint=225,208,224
 firstLevelID=level1
-nextLevelID=level2
+nextLevelID=level3
+cameraWidth=30

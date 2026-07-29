@@ -14,10 +14,11 @@
 
 
 unordered_map<string, Level> levels = {
-	{ "level1", Level("level1") }
+	{ "level1", Level("level1") },
+	{ "level2", Level("level2") },
+	{ "level3", Level("level3") },
+	{ "level4", Level("level4") }
 };
-
-string currentLevel = "level1";
 
 //  This namespace will contain every state of the game, like levels and menus.
 namespace frame {
@@ -117,7 +118,7 @@ namespace frame {
 		//  This clears everything (like sprites, music, and sounds) from the global buffers EXCEPT for textures, sound buffers, and fonts.
 		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
 		
-		loadPlayerStats(playerStats);
+		loadPlayerStats();
 		
 		//  If the game window is stable, the state moves to test_level.
 		if (game.stableState()) {
@@ -127,11 +128,16 @@ namespace frame {
 	}
 	
 	void game_menu() {
-		level_transition();
+		if (TOTAL_LIVES == 0) {
+			TOTAL_LIVES = 3;
+			game_over();
+		} else {
+			level_transition();
+		}
 	}
 	
 	void level_transition() {
-		levels[currentLevel].loadLevel();
+		levels[CURRENT_LEVEL_ID].loadLevel();
 		active_level();
 	}
 	
@@ -149,7 +155,7 @@ namespace frame {
 		//  This is just the amount of time that passes between ticks.
 		const double DELTA = 1.0/tps;
 		
-		Level level = levels[currentLevel];
+		Level& level = levels[CURRENT_LEVEL_ID];
 		
 		//  This starts a stopwatch that accumulates over the main window loop then gets analyzed in the main game loop/physics to check how many times the physics should be calculated.
 		fstopwatches.start("accumulated_game_time");
@@ -182,7 +188,12 @@ namespace frame {
 		musics.play("music", reinterpret_cast<const char*>(assets[level.musicPath].data()), assets[level.musicPath].size(), 0.3, true, true)["music"].setLoopPoints_sec(level.musicLoopStart, musics["music"].getDuration_sec(), false).setVolume(level.musicVolume * sounds.getVolume());
 		
 		//  This sets the camera to width 24 and position (0, 0).
-		ViewPort camera = ViewPort(24, {0.0, 0.0});
+		ViewPort camera = ViewPort(level.cameraWidth, {0.0, 0.0});
+		
+		if (level.cameraHeight > 0.0) {
+			camera.setSizeToHeight(level.cameraHeight, game.resolution);
+		}
+		
 		//  This sets the camera's position to half of its dimensions (this offsets the camera towards the top-right by half of its lengths).
 		camera.position = camera.getPerceivedDimensions(game.resolution)/2;
 		
@@ -329,13 +340,14 @@ namespace frame {
 					}
 					
 					if (player.position.y < -3) {
-						
+						player.damage(player.maxHealth, true);
+						player.position.y = -100;
 					}
 					
 					if (player.goal()) {
+						level.status = LevelStatus::Complete;
 						if (player.goal_triggered()) {
 							musics["music"].pause();
-							level.status = LevelStatus::Complete;
 							fstopwatches["game_freeze_time"].set(6);
 							fstopwatches["accumulated_game_time"].set(0);
 							if (!musics.exists("victory")) {
@@ -353,45 +365,19 @@ namespace frame {
 							player.velocity = Vec2(0, 18);
 							sound_lists["sound_effects"].add(sound_buffers["fatal_damage"], 0.7f, 0.0f, 1, 1.0, true);
 							fstopwatches["accumulated_game_time"].set(0);
-							
-							if (TOTAL_LIVES == 0) {
-								level.status = LevelStatus::GameOver;
-							} else {
-								level.status = LevelStatus::Failed;
-							}
 						}
 						if (!player.damage_triggered()) {
 							fstopwatches["death_time"].add(1.0/tps);
 						}
+						if (TOTAL_LIVES == 0) {
+							level.status = LevelStatus::GameOver;
+						} else {
+							level.status = LevelStatus::Failed;
+						}
 						player.velocity.x = 0;
 					}
 					
-					//  ------------------------------ TEMPORARY player stat debug controls ------------------------------
-					//  These let you see the HUD respond to stat changes before collision/collectibles/enemies exist to
-					//  actually trigger them. Delete this block once those systems are wired up to call playerStats
-					//  directly (e.g. a Coin's applyEffect() calling playerStats.addCoins(), a Hazard tile calling
-					//  playerStats.damage(), etc).
-				    
-				    
-				    if (game.pollForKey(sf::Keyboard::Key::J) && !JKEY) { playerStats.addCoins(1); }
-				    JKEY = game.pollForKey(sf::Keyboard::Key::J);
-				    
-				    if (game.pollForKey(sf::Keyboard::Key::L) && !LKEY) { playerStats.damage(1); }
-				    LKEY = game.pollForKey(sf::Keyboard::Key::L);
-				    
-				    if (game.pollForKey(sf::Keyboard::Key::I) && !IKEY) { playerStats.heal(1); }
-				    IKEY = game.pollForKey(sf::Keyboard::Key::I);
-				    
-				    if (game.pollForKey(sf::Keyboard::Key::O) && !OKEY) { playerStats.addPoints(100); }
-				    OKEY = game.pollForKey(sf::Keyboard::Key::O);
-				    
-				    if (game.pollForKey(sf::Keyboard::Key::U) && !UKEY) {
-				        playerStats.damage(playerStats.health);
-				        playerStats.loseLife();
-				    }
-				    UKEY = game.pollForKey(sf::Keyboard::Key::U);
-					//  ------------------------------ TEMPORARY player stat debug controls end ------------------------------
-					// This whole block is new — delete it once real collision/collectible code is calling playerStats directly.
+					TOTAL_HEALTH = player.health();
 					
 	//  ------------------------------ Backend Game Loop Ends Here ------------------------------
 					
@@ -495,9 +481,7 @@ namespace frame {
 			
 			//  This refreshes every HUD element (health hearts, coins, points, lives, game over text)
 			//  to match the current playerStats.
-			cout << "AAAA";
-			hud.update(playerStats);
-			cout << "ZZZZ";
+			hud.update();
 			
 			vector<ExtendedSprite*> sortedSprites = sprites.getExtendedVector();
 			vector<ExtendedText*> sortedTexts = texts.getExtendedVector();
@@ -506,6 +490,7 @@ namespace frame {
 			
 			array<array<size_t, 2>, 2> cameraIndexRangeContext = level.tilemap.resolveIndexRangeContext(camera.position, camera.getPerceivedDimensions(game.resolution));
 			
+			game.window->clear();
 			for (ExtendedSprite*& spritePtr : sortedSprites) {
 				if (spritePtr) {
 					if (spritePtr->has_tag("level.darken")) {
@@ -603,8 +588,6 @@ namespace frame {
 			
 		}
 		
-		hud.unbuild();
-		
 		//  This clears everything (like sprites, music, and sounds) from the global buffers EXCEPT for textures, sound buffers, and fonts.
 		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
 		for (auto& currentPS : parallaxSprites) {
@@ -614,15 +597,17 @@ namespace frame {
 		//  This move to the next state (which is end_application for now).
 		if (game.stableState(!closeWindow)) {
 			if (level.status == LevelStatus::Failed) {
+				TOTAL_HEALTH = 3;
 				level_transition();
 			} else if (level.status == LevelStatus::GameOver) {
+				CURRENT_LEVEL_ID = level.firstLevelID;
 				game_over();
 			} else if (level.status == LevelStatus::Complete) {
 				if (levels.count(level.nextLevelID) != 0) {
-					currentLevel = level.nextLevelID;
+					CURRENT_LEVEL_ID = level.nextLevelID;
 					level_transition();
 				} else {
-					currentLevel = level.firstLevelID;
+					CURRENT_LEVEL_ID = level.firstLevelID;
 					win_game();
 				}
 			}
@@ -660,7 +645,7 @@ namespace frame {
 		
 		//  This saves the player's current stats (health, coins, points, lives) back to the save file
 		//  so they persist the next time the game is launched.
-		savePlayerStats(playerStats);
+		savePlayerStats();
 		
 		return;
 	}

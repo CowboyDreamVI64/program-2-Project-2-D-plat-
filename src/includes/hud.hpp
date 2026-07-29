@@ -47,39 +47,27 @@ class HUD {
 		//  Creates every sprite/text element the HUD needs. Safe to call again later (e.g. after a
 		//  clearall() wipes the sprite/text containers between game states) to rebuild everything.
 		HUD& build() {
-			if (!built) {
-				sprites.add("hud.coin_icon", textures[coinTextureID], z)
-					.resizeToFit(sf::Vector2f({iconSize, iconSize}))
-					.setPosition(sf::Vector2f({paddingX, paddingY}));
-				
-				texts.add("hud.coin_text", fonts[fontID], z)
-					.setCharacterSize(22)
-					.setFillColor(sf::Color::White);
-				
-				sprites.add("hud.lives_icon", textures[livesTextureID], z)
-					.resizeToFit(sf::Vector2f({iconSize, iconSize}))
-					.setPosition(sf::Vector2f({paddingX, paddingY + iconSize + 8.0f}));
-				
-				texts.add("hud.lives_text", fonts[fontID], z)
-					.setCharacterSize(22)
-					.setFillColor(sf::Color::White);
-				
-				texts.add("hud.points_text", fonts[fontID], z)
-					.setCharacterSize(22)
-					.setFillColor(sf::Color::White);
-				
-				texts.add("hud.gameover_text", fonts[fontID], z + 1.0)
-					.setCharacterSize(48)
-					.setFillColor(sf::Color::Red)
-					.setString("");
-			}
+			sprites.add("hud.coin_icon", textures[coinTextureID], z)
+				.resizeToFit(sf::Vector2f({iconSize, iconSize}))
+				.setPosition(sf::Vector2f({paddingX, paddingY}));
+			
+			texts.add("hud.coin_text", fonts[fontID], z)
+				.setCharacterSize(22)
+				.setFillColor(sf::Color::White);
+			
+			sprites.add("hud.lives_icon", textures[livesTextureID], z)
+				.resizeToFit(sf::Vector2f({iconSize, iconSize}))
+				.setPosition(sf::Vector2f({paddingX, paddingY + iconSize + 8.0f}));
+			
+			texts.add("hud.lives_text", fonts[fontID], z)
+				.setCharacterSize(22)
+				.setFillColor(sf::Color::White);
+			
+			texts.add("hud.points_text", fonts[fontID], z)
+				.setCharacterSize(22)
+				.setFillColor(sf::Color::White);
 			
 			built = true;
-			return *this;
-		}
-		
-		HUD& unbuild() {
-			built = false;
 			return *this;
 		}
 		
@@ -94,23 +82,23 @@ class HUD {
 		
 		//  Refreshes every HUD element to match the passed stats. Call this once per rendered frame
 		//  (not once per physics tick) after playerStats has potentially changed.
-		HUD& update(const PlayerStats& stats) {
+		HUD& update() {
 			if (!built) {
 				build();
 			}
 			
 			//  --- Coins ---
 			texts["hud.coin_text"]
-				.setString("x" + to_string(stats.coins))
+				.setString("x" + to_string(TOTAL_COINS))
 				.setPosition(sf::Vector2f({paddingX + iconSize + 8.0f, paddingY + 4.0f}));
 			
 			//  --- Lives ---
 			texts["hud.lives_text"]
-				.setString("x" + to_string(stats.lives))
+				.setString("x" + to_string(TOTAL_LIVES))
 				.setPosition(sf::Vector2f({paddingX + iconSize + 8.0f, paddingY + iconSize + 12.0f}));
 			
 			//  --- Points (top-right corner) ---
-			const string pointsString = "Score: " + to_string(stats.points);
+			const string pointsString = string(to_string(TOTAL_SCORE).size() < SCORE_DISPLAY_PADDING ? SCORE_DISPLAY_PADDING - to_string(TOTAL_SCORE).size() : 0, '0') + to_string(TOTAL_SCORE);
 			ExtendedText& pointsText = texts["hud.points_text"].setString(pointsString);
 			pointsText.setPosition(sf::Vector2f({
 				static_cast<float>(game.resolution.x) - pointsText.getGlobalBounds().size.x - paddingX,
@@ -119,7 +107,7 @@ class HUD {
 			
 			//  --- Health (heart row) ---
 			clearHearts();
-			for (int i = 0; i < stats.maxHealth; ++i) {
+			for (int i = 0; i < TOTAL_HEALTH; ++i) {
 				sprites.add("hud.heart." + to_string(i), textures[heartTextureID], z)
 					.add_tag("hud.heart")
 					.resizeToFit(sf::Vector2f({heartIconSize, heartIconSize}))
@@ -127,19 +115,7 @@ class HUD {
 						paddingX + i*(heartIconSize + heartIconSpacing),
 						paddingY + 2*(iconSize + 8.0f)
 					}))
-					.setOpacity(i < stats.health ? 1.0f : 0.25f);
-			}
-			
-			//  --- Game over message ---
-			ExtendedText& gameOverText = texts["hud.gameover_text"];
-			if (stats.isGameOver()) {
-				gameOverText.setString("GAME OVER");
-				gameOverText.setPosition(sf::Vector2f({
-					(static_cast<float>(game.resolution.x) - gameOverText.getGlobalBounds().size.x)/2.0f,
-					(static_cast<float>(game.resolution.y) - gameOverText.getGlobalBounds().size.y)/2.0f
-				}));
-			} else {
-				gameOverText.setString("");
+					.setOpacity(i < TOTAL_HEALTH ? 1.0f : 0.25f);
 			}
 			
 			return *this;
