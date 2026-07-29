@@ -5,6 +5,57 @@ namespace EntityBehaviorTypes {
 	constexpr short Enemy = 2;
 }
 
+struct CollisionContext {
+	public:
+		bool collision = false;
+		bool collisionUp = false;
+		bool collisionDown = false;
+		bool collisionLeft = false;
+		bool collisionRight = false;
+		
+		
+		CollisionContext(const array<bool, 5>& collisionResults = array<bool, 5>()) :
+			collision(collisionResults[0]),
+			collisionUp(collisionResults[1]),
+			collisionDown(collisionResults[2]),
+			collisionLeft(collisionResults[3]),
+			collisionRight(collisionResults[4])
+		{};
+		
+		static CollisionContext resolve(const Vec2 targetPosition, const Vec2 targetSize, const Vec2 sourcePosition, const Vec2 sourceSize = 1.0) {
+			CollisionContext outputResults;
+			
+			if (targetPosition.x + targetSize.x/2 > sourcePosition.x - sourceSize.x/2 && targetPosition.x - targetSize.x/2 < sourcePosition.x + sourceSize.x/2 && targetPosition.y + targetSize.y/2 > sourcePosition.y - sourceSize.y/2 && targetPosition.y - targetSize.y/2 < sourcePosition.y + sourceSize.y/2) {
+				outputResults.collision = true;
+				
+				Vec2 overlap(
+					targetPosition.x < sourcePosition.x ? targetPosition.x + targetSize.x/2 - sourcePosition.x + sourceSize.x/2 : sourcePosition.x + sourceSize.x/2 - targetPosition.x + targetSize.x/2,
+					targetPosition.y < sourcePosition.y ? targetPosition.y + targetSize.y/2 - sourcePosition.y + sourceSize.y/2 : sourcePosition.y + sourceSize.y/2 - targetPosition.y + targetSize.y/2
+				);
+				
+				if (overlap.x < overlap.y) {
+					//  Right collision
+					if (targetPosition.x < sourcePosition.x) {
+						outputResults.collisionRight = true;
+					} else {
+					//  Left collision
+						outputResults.collisionLeft = true;
+					}
+				} else {
+					if (targetPosition.y < sourcePosition.y) {
+						//  Top collision
+						outputResults.collisionUp = true;
+					} else {
+						//  Bottom collision
+						outputResults.collisionDown = true;
+					}
+				}
+			}
+			
+			return outputResults;
+		}
+};
+
 //  A class that stores details about entities and simulates their physics.
 class Entity {
 	protected:
@@ -36,8 +87,11 @@ class Entity {
 		bool UNCROUCH_BLOCKED = false;
 		bool HEAD_HIT_OBJECT_TRIGGERED = false;
 		bool DAMAGE_TRIGGERED = false;
+		bool ENEMY_DEFEAT_TRIGGERED = false;
 		size_t JUMP_BUFFER = 0;
 		size_t INVINCIBILITY_FRAMES = 0;
+		
+		double DEATH_TIME = 0.0;
 		
 		double GROUND_TIME = 0.0;
 		
@@ -148,8 +202,14 @@ class Entity {
 		inline bool damage_triggered() const {
 			return DAMAGE_TRIGGERED;
 		}
+		inline bool enemy_defeat_triggered() const {
+			return ENEMY_DEFEAT_TRIGGERED;
+		}
 		inline double health() const {
 			return HEALTH;
+		}
+		inline double death_time() const {
+			return DEATH_TIME;
 		}
 		
 		Vec2 baseHitbox;
@@ -200,7 +260,7 @@ class Entity {
 	
 		//  The default boolean array of input for the entity; setting any of these boolean values to "true" will make the corresponding movement
 		//  register as input when no keybinds are passed through "receiveInput."
-		std::array<bool, 6> constInput;
+		array<bool, 6> constInput = array<bool, 6>();
 		
 		short behaviorType;
 		
@@ -222,7 +282,9 @@ class Entity {
 			if (ON_GROUND) {
 				if (GROUND_TIME >= 0.2) {
 					GROUND_TIME = 0.0;
-					LAST_SAFE_POSITION = position;
+					if (behaviorType == EntityBehaviorTypes::Player) {
+						LAST_SAFE_POSITION = position;
+					}
 				}
 				if (DOWN) {
 					if (!IS_CROUCHING) {
@@ -278,7 +340,7 @@ class Entity {
 			} else {
 				RIGHT = false;
 			}
-			if (booleans[4]) {
+			if (booleans[4] || (behaviorType == EntityBehaviorTypes::Player && booleans[0])) {
 				if (!JUMP) {
 					JUMP_TRIGGERED = true;
 				}
@@ -309,10 +371,17 @@ class Entity {
 		
 		//  A bunch of physics and math that calculates the momentum and position of the entity as well as changing some triggers.
 		Entity& tickPhysics(const size_t& TPS) {
-			DAMAGE_TRIGGERED = false;
+			ENEMY_DEFEAT_TRIGGERED = false;
 			
-			//  True if the entity just touched the ground.
-			ON_GROUND_TRIGGERED = false;
+			if (behaviorType == EntityBehaviorTypes::Enemy && HEALTH <= 0.0) {
+				speed = 0;
+				velocity = 0;
+				acceleration_const = 0;
+			}
+			
+			if (HEALTH <= 0.0) {
+				DEATH_TIME += 1.0/TPS;
+			}
 			
 			//  True if the entity just jumped.
 			IS_JUMPING_TRIGGERED = false;
@@ -438,6 +507,12 @@ class Entity {
 				}
 			}
 			
+			ON_GROUND = false;
+			ON_GROUND_TRIGGERED = false;
+			UNCROUCH_BLOCKED = false;
+			HEAD_HIT_OBJECT_TRIGGERED = false;
+			DAMAGE_TRIGGERED = false;
+			
 			return *this;
 		}
 		
@@ -470,79 +545,51 @@ class Entity {
 		}
 		
 		Entity& resolveBlockCollision(const TileMap& inputTileMap) {
-			ON_GROUND = false;
-			ON_GROUND_TRIGGERED = false;
-			UNCROUCH_BLOCKED = false;
-			HEAD_HIT_OBJECT_TRIGGERED = false;
-			
 			const array<array<size_t, 2>, 2> entityIndexRangeContext = inputTileMap.resolveIndexRangeContext(position, HITBOX);
 			
 			for (size_t Y = entityIndexRangeContext[0][1]; Y < entityIndexRangeContext[1][1]; ++Y) {
 				for (size_t X = entityIndexRangeContext[0][0]; X < entityIndexRangeContext[1][0]; ++X) {
 					if (IS_CROUCHING && inputTileMap.getTileCopy(X,Y).isSolid()) {
-						if (position.x + HITBOX.x/2 > X && position.x - HITBOX.x/2 < X + 1.0 && position.y + HITBOX.y > Y && position.y < Y + 1.0) {
+						if (CollisionContext::resolve(position, HITBOX, Vec2(X,Y - HITBOX.y/2) + 0.5, 1.0).collisionUp) {
 							if (position.y < Y + 0.5 + HITBOX.y/2) {
 								UNCROUCH_BLOCKED = true;
 							}
 						}
 					}
-					if (position.x + HITBOX.x/2 > X && position.x - HITBOX.x/2 < X + 1.0 && position.y + HITBOX.y/2 > Y && position.y - HITBOX.y/2 < Y + 1.0) {
-						Vec2 overlap(
-							position.x < X + 0.5 ? position.x + HITBOX.x/2 - X : X + 1.0 - position.x + HITBOX.x/2,
-							position.y < Y + 0.5 ? position.y + HITBOX.y/2 - Y : Y + 1.0 - position.y + HITBOX.y/2
-						);
-						
-						bool collisionUp = false, collisionDown = false, collisionLeft = false, collisionRight = false;
-						
-						if (overlap.x < overlap.y) {
-							//  Right collision
-							if (position.x < X + 0.5) {
-								collisionRight = true;
-							} else {
-							//  Left collision
-								collisionLeft = true;
-							}
-						} else {
-							if (position.y < Y + 0.5) {
-								//  Top collision
-								collisionUp = true;
-								if (inputTileMap.getTileCopy(X,Y).isSolid()) {
-									position.y = Y - HITBOX.y/2;
-									velocity.y *= velocity.y > 0 ? -0.2 : 1;
-									HEAD_HIT_OBJECT_TRIGGERED = true;
-								}
-							} else {
-								//  Bottom collision
-								collisionDown = true;
-								if (inputTileMap.getTileCopy(X,Y).isSolid()) {
-									position.y = Y + 1.0 + HITBOX.y/2;
-									velocity.y = 0;
-									if (!ON_GROUND) {
-										ON_GROUND_TRIGGERED = true;
-									}
-									ON_GROUND = true;
-								}
-							}
-						}
-						if (inputTileMap.getTileCopy(X,Y).isHazard()) {
+					
+					const CollisionContext currentTileCollision = CollisionContext::resolve(position, HITBOX, Vec2(X,Y) + 0.5, 1.0);
+					if (currentTileCollision.collision) {
+						if (behaviorType == EntityBehaviorTypes::Player && inputTileMap.getTileCopy(X,Y).isHazard()) {
 							damage(1.0);
-							position = LAST_SAFE_POSITION;
-							velocity = 0.0;
-						} else if (inputTileMap.getTileCopy(X,Y).isSolid()) {
-							if (collisionLeft && !inputTileMap.getTileCopy(X + 1,Y).isSolid()) {
-									position.x = X + 1.0 + HITBOX.x/2;
-									velocity.x = 0;
+							if (HEALTH > 0.0) {
+								if (behaviorType == EntityBehaviorTypes::Player) {
+									position = LAST_SAFE_POSITION;
+								}
 							}
-							if (collisionRight && !inputTileMap.getTileCopy(X - 1,Y).isSolid()) {
+							velocity = 0.0;
+						} else if (inputTileMap.getTileCopy(X,Y).isSolid() || (behaviorType == EntityBehaviorTypes::Enemy && inputTileMap.getTileCopy(X,Y).isHazard())) {
+							if (currentTileCollision.collisionLeft && !(inputTileMap.getTileCopy(X + 1,Y).isSolid() || (behaviorType == EntityBehaviorTypes::Enemy && inputTileMap.getTileCopy(X + 1,Y).isHazard()))) {
+								if (behaviorType == EntityBehaviorTypes::Enemy) {
+									constInput[1] = false;
+									constInput[3] = true;
+								}
+								position.x = X + 1.0 + HITBOX.x/2;
+								velocity.x = 0;
+							}
+							if (currentTileCollision.collisionRight && !(inputTileMap.getTileCopy(X - 1,Y).isSolid() || (behaviorType == EntityBehaviorTypes::Enemy && inputTileMap.getTileCopy(X - 1,Y).isHazard()))) {
+								if (behaviorType == EntityBehaviorTypes::Enemy) {
+									constInput[3] = false;
+									constInput[1] = true;
+								}
 								position.x = X - HITBOX.x/2;
 								velocity.x = 0;
 							}
-							if (collisionUp) {
+							if (currentTileCollision.collisionUp) {
 								position.y = Y - HITBOX.y/2;
 								velocity.y *= velocity.y > 0 ? -0.2 : 1;
 								HEAD_HIT_OBJECT_TRIGGERED = true;
 							}
-							if (collisionDown) {
+							if (currentTileCollision.collisionDown) {
 								position.y = Y + 1.0 + HITBOX.y/2;
 								velocity.y = 0;
 								if (!ON_GROUND) {
@@ -554,7 +601,58 @@ class Entity {
 					}
 				}
 			}
+			return *this;
+		}
+		
+		Entity& resolveEntityCollision(Entity& inputEntity) {
+			const CollisionContext currentEntityCollision = CollisionContext::resolve(position, HITBOX, inputEntity.position, inputEntity.hitbox());
+			if (currentEntityCollision.collision) {
+				if (inputEntity.behaviorType == EntityBehaviorTypes::Enemy) {
+					if (behaviorType == EntityBehaviorTypes::Enemy) {
+						if (currentEntityCollision.collisionLeft) {
+							constInput[1] = false;
+							constInput[3] = true;
+							position.x = inputEntity.position.x + inputEntity.hitbox().x/2 + HITBOX.x/2;
+							velocity.x = 0;
+						}
+						if (currentEntityCollision.collisionRight) {
+							constInput[3] = false;
+							constInput[1] = true;
+							position.x = inputEntity.position.x - inputEntity.hitbox().x/2 - HITBOX.x/2;
+							velocity.x = 0;
+						}
+					} else if (behaviorType == EntityBehaviorTypes::Player && inputEntity.health() > 0) {
+						if (currentEntityCollision.collisionDown) {
+							inputEntity.damage(1);
+							ENEMY_DEFEAT_TRIGGERED = true;
+							position.y = inputEntity.position.y + inputEntity.hitbox().y + HITBOX.y/2;
+							velocity.y = jumpForce*jumpForceSprintingMultiplier;
+							IS_JUMPING = true;
+							IS_IN_AIR_FROM_JUMPING = true;
+						} else if (currentEntityCollision.collisionLeft) {
+							damage(1);
+							velocity = Vec2(6, 12);
+						} else if (currentEntityCollision.collisionRight) {
+							damage(1);
+							velocity = Vec2(-6, 12);
+						} else if (currentEntityCollision.collisionUp) {
+							damage(1);
+							velocity.y *= velocity.y > 0.0;
+						}
+					}
+				}
+			}
 			
+			return *this;
+		}
+		
+		Entity& resolveEntityCollision(vector<Entity>& inputEntities) {
+			for (Entity& collisionEntity : inputEntities) {
+				if (this == &collisionEntity) {
+					continue;
+				}
+				resolveEntityCollision(collisionEntity);
+			}
 			return *this;
 		}
 	
@@ -585,7 +683,7 @@ class Entity {
 		AnimationState animation_state;
 		
 		Entity& tickAnimation(const size_t& TPS) {
-			if (animation_state.getAnimationID() == "walking") {
+			if (behaviorType == EntityBehaviorTypes::Player && animation_state.getAnimationID() == "walking") {
 				animation_state.tick(1.0/TPS * ON_GROUND * (velocity.x_abs() > speed ? 2 : 1.0));
 			} else {
 				animation_state.tick(1.0/TPS);

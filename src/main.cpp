@@ -54,6 +54,15 @@ namespace frame {
 			{"player.jump", "assets/textures/player/jump.png"},
 			{"player.skid", "assets/textures/player/skid.png"},
 			{"player.die", "assets/textures/player/die.png"},
+			{"enemy.knight.walk.0", "assets/textures/knight/walk0.png"},
+			{"enemy.knight.walk.1", "assets/textures/knight/walk1.png"},
+			{"enemy.knight.walk.2", "assets/textures/knight/walk2.png"},
+			{"enemy.knight.walk.3", "assets/textures/knight/walk3.png"},
+			{"enemy.knight.walk.4", "assets/textures/knight/walk4.png"},
+			{"enemy.knight.squish.0", "assets/textures/knight/squish0.png"},
+			{"enemy.knight.squish.1", "assets/textures/knight/squish1.png"},
+			{"enemy.knight.squish.2", "assets/textures/knight/squish2.png"},
+			{"enemy.knight.squish.3", "assets/textures/knight/squish3.png"},
 			{"sky", "assets/textures/background/sky.png"},
 			{"dirt", "assets/textures/tiles/dirt.png"},
 			{"grass", "assets/textures/tiles/grass.png"},
@@ -75,7 +84,11 @@ namespace frame {
 			{"skid", "assets/sounds/skid.ogg"},
 			{"block_hit", "assets/sounds/block_hit.ogg"},
 			{"damage", "assets/sounds/damage.ogg"},
-			{"fatal_damage", "assets/sounds/fatal_damage.ogg"}
+			{"fatal_damage", "assets/sounds/fatal_damage.ogg"},
+			{"enemy_damage", "assets/sounds/enemy_damage.ogg"},
+			{"coin", "assets/sounds/coin.ogg"},
+			{"power_up", "assets/sounds/power_up.ogg"},
+			{"one_up", "assets/sounds/one_up.ogg"}
 		});
 		
 		//  This stops everything from looking blurry.
@@ -122,6 +135,7 @@ namespace frame {
 		
 		//  This adds a player sprite and a sky sprite.
 		sprites.add("player", textures["player.idle"], 0.0).add_tag("level.darken").add_tag("player_sprite");
+		sprites.add("enemy.knight", textures["enemy.knight.walk.0"], 0.1).add_tag("level_darken").add_tag("repeated_sprite").add_tag("repeated_sprite.entity").add_tag("repeated_sprite.entity.knight");
 		sprites.add("ground", textures["dirt"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.ground");
 		sprites.add("spike", textures["vertical_spike"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.spike");
 		sprites.add("hills1", textures["hills1"], -2.0).add_tag("level.darken");
@@ -248,15 +262,25 @@ namespace frame {
 					
 					if (player.health() > 0) {
 						player.resolveBlockCollision(level.tilemap);
-					} else {
-						player.resolveBlockCollision(TileMap());
+						player.resolveEntityCollision(level.entities);
+					}
+					
+					for (Entity& entity : level.entities) {
+						entity.receiveInput();
+						entity.tickPhysics(tps);
+						entity.resolveBlockCollision(level.tilemap);
+						entity.resolveEntityCollision(player);
+						if (player.health() > 0) {
+							entity.resolveEntityCollision(level.entities);
+						}
 					}
 					
 					if (player.health() <= 0) {
 						if (player.damage_triggered()) {
 							musics["music"].pause();
-							fstopwatches["game_freeze_time"].set(0.7);
-							player.velocity = Vec2(0, 20);
+							fstopwatches["game_freeze_time"].set(0.6);
+							player.acceleration_const.y = -40;
+							player.velocity = Vec2(0, 18);
 							sound_lists["sound_effects"].add(sound_buffers["fatal_damage"], 0.7f, 0.0f, 1, 1.0, true);
 							fstopwatches["accumulated_game_time"].set(0);
 						}
@@ -304,7 +328,10 @@ namespace frame {
 						sound_lists["sound_effects"].add(sound_buffers["block_hit"], 0.4f, 0.0f, 1, 1.0, true);
 					}
 					if (player.damage_triggered() && player.health() > 0.0) {
-						sound_lists["sound_effects"].add(sound_buffers["damage"], 0.5f, 0.0f, 1, 1.0, true);
+						sound_lists["sound_effects"].add(sound_buffers["damage"], 0.6f, 0.0f, 1, 1.0, true);
+					}
+					if (player.enemy_defeat_triggered()) {
+						sound_lists["sound_effects"].add(sound_buffers["enemy_damage"], 1.0f, 0.0f, 1, 1.0, true);
 					}
 					
 					parallaxSprites["clouds1"].setActualPosition(parallaxSprites["clouds1"].getActualPosition() + Vec2(2, 0)/tps);
@@ -312,6 +339,11 @@ namespace frame {
 					
 					player.tickAnimation(tps);
 					player.updateAnimationState();
+					
+					for (Entity& entity : level.entities) {
+						entity.tickAnimation(tps);
+						entity.updateAnimationState();
+					}
 	//  ------------------------------ Frontend Game Loop Ends Here ------------------------------
 					
 					
@@ -320,13 +352,15 @@ namespace frame {
 			}
 			
 //  ------------------------------ Frontend Program Loop Starts Here ------------------------------	
+			level.cleanEntities();
+
 			if (fstopwatches["death_time"].frame > 0 && player.health() <= 0.0 && !player.damage_triggered() && !musics.exists("death_music")) {
 				musics.play("death_music", reinterpret_cast<const char*>(assets["assets/sounds/music/death.ogg"].data()), assets["assets/sounds/music/death.ogg"].size(), sounds.getVolume()*0.7, true, false);
 			}
 
 			//  This centers the camera position to the player position without the camera clipping out of bounds.
 			if (!mouseDraggingPlayer && player.health() > 0) {
-				camera.position = player.position;
+				camera.position = player.position + Vec2(0.0, player.is_crouching() ? player.hitbox().y/2 : 0.0);
 				
 				if (player.position.x < camera.getPerceivedDimensions(game.resolution).x/2) {
 					camera.position.x = camera.getPerceivedDimensions(game.resolution).x/2;
@@ -399,6 +433,15 @@ namespace frame {
 					}
 					
 					if (spritePtr->has_tag("repeated_sprite")) {
+						if (spritePtr->has_tag("repeated_sprite.entity")) {
+							if (spritePtr->has_tag("repeated_sprite.entity.knight")) {
+								for (Entity& entity : level.entities) {
+									const AnimationFrame& entityAnimationFrame = entity.animation_state.getAnimationFrame();
+									camera.setInViewport(game, sprites["enemy.knight"].setTexture(textures[entityAnimationFrame.TextureID]), entity.position + entityAnimationFrame.offset*Vec2(entity.is_facing_right() ? 1.0 : -1.0, 1.0), entityAnimationFrame.size*Vec2(entity.is_facing_right() ? 1.0 : -1.0, 1.0));
+									game.ExtendedDraw(spritePtr);
+								}
+							}
+						}
 						if (spritePtr->has_tag("repeated_sprite.tile")) {
 							for (size_t Y = cameraIndexRangeContext[0][1]; Y < cameraIndexRangeContext[1][1]; ++Y) {
 								for (size_t X = cameraIndexRangeContext[0][0]; X < cameraIndexRangeContext[1][0]; ++X) {

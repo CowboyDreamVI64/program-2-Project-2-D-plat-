@@ -130,6 +130,13 @@ vector<string> getFileDirectories(const string& initialDirectory) {
 	return fileDirectories;
 }
 
+string tolowercase(string inputString) {
+	for (char& currentChar : inputString) {
+		currentChar += currentChar >= 'A' && currentChar <= 'Z' ? 'a' - 'A' : 0;
+	}
+	return inputString;
+}
+
 //  This complex function creates an unordered map of bytes. This acts as a data accessor via string ID. Basically,
 //  when you input a file path, the function uses the above function to get the path to every single file and
 //  subfile within the path, then gets all file data for each of these files, and stores the file data into their
@@ -175,7 +182,7 @@ unordered_map<string, vector<unsigned char>> loadSubfilesToMap(string initialDir
 			//  NOTE: std::unordered_map::insert_or_assign(key, value) is an unordered map method that either adds
 			//        a new key-value pair if the key doesn't exist or replaces an existing key-value pair with this
 			//        key-value pair if the key already exists.
-			outputAssets.insert_or_assign(replaceall(fileDirectories[i].substr(pathStartingIndex, fileDirectories[i].size() - pathStartingIndex), "\\", "/"), bytes);
+			outputAssets.insert_or_assign(tolowercase(replaceall(fileDirectories[i].substr(pathStartingIndex, fileDirectories[i].size() - pathStartingIndex), "\\", "/")), bytes);
 		}
 	}
 	return outputAssets;

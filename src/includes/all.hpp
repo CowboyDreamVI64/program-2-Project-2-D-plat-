@@ -149,8 +149,6 @@ using namespace std;
 
 #include "tile.hpp"
 
-#include "level.hpp"
-
 //  --- ENTITY ---
 //  
 //  This contains details about an actor in the world. It will eventually have collision
@@ -181,3 +179,5 @@ using namespace std;
 //  -------------------------------------------------------------------------------------------------------
 #include "hud.hpp"
  // ----------------- Araceli Part ------------------------
+
+#include "level.hpp"
