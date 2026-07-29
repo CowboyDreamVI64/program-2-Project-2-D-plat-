@@ -17,6 +17,7 @@ class Level {
 		TileMap tilemap;
 		vector<Entity> entities;
 		vector<Collectable> collectables;
+		unordered_set<string> enabledSprites;
 		double musicLoopStart;
 		double musicVolume;
 		string musicPath;
@@ -25,10 +26,10 @@ class Level {
 		double cameraWidth;
 		double cameraHeight;
 		
-		bool clouds_1 = false;
-		bool clouds_2 = false;
-		bool autumn_hills_1 = false;
-		bool autumn_hills_2 = false;
+		string groundTextureID;
+		string exposedGroundTextureID;
+		
+		double backgroundSpriteMultiplier;
 		
 		Vec2 playerStartPosition = 0;
 		
@@ -126,10 +127,10 @@ class Level {
 				try {
 					darknessTint = sf::Color(stoi(darknessTints.at(0)), stoi(darknessTints.at(1)), stoi(darknessTints.at(2)), 255);
 				} catch (...) {
-					musicVolume = 0;
+					darknessTint = sf::Color::White;
 				}
 			} else {
-				musicVolume = 1.0;
+				darknessTint = sf::Color::White;
 			}
 			
 			if (levelData.count("name") != 0) {
@@ -169,7 +170,6 @@ class Level {
 				cameraWidth = 24;
 			}
 			
-			
 			if (levelData.count("cameraHeight") != 0) {
 				try {
 					cameraHeight = stod(levelData.at("cameraHeight"));
@@ -180,7 +180,40 @@ class Level {
 				cameraHeight = 0;
 			}
 			
+			if (levelData.count("backgroundSpriteMultiplier") != 0) {
+				try {
+					backgroundSpriteMultiplier = stod(levelData.at("backgroundSpriteMultiplier"));
+				} catch (...) {
+					backgroundSpriteMultiplier = 1;
+				}
+			} else {
+				backgroundSpriteMultiplier = 1;
+			}
+			
+			if (levelData.count("enabledSprites") != 0) {
+				vector<string> enabledSpritesVector = parseCommaList(levelData.at("enabledSprites"));
+				for (size_t i = 0; i < enabledSpritesVector.size(); ++i) {
+					enabledSprites.insert(enabledSpritesVector[i]);
+				}
+			}
+			
+			if (levelData.count("groundTextureID") != 0) {
+				groundTextureID = levelData.at("groundTextureID");
+			} else {
+				groundTextureID = "tile.dirt";
+			}
+			
+			if (levelData.count("exposedGroundTextureID") != 0) {
+				exposedGroundTextureID = levelData.at("exposedGroundTextureID");
+			} else {
+				exposedGroundTextureID = "tile.dirt";
+			}
+			
 			return *this;
+		}
+		
+		inline bool spriteIsEnabled(const string& inputSpriteID) const {
+			return enabledSprites.count(inputSpriteID) != 0;
 		}
 		
 		Level& cleanEntities() {

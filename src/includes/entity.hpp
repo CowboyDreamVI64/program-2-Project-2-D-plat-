@@ -216,6 +216,9 @@ class Entity {
 		inline bool heart_collected_triggered() const {
 			return HEART_COLLECTED_TRIGGERED;
 		}
+		inline bool life_collected_triggered() const {
+			return LIFE_COLLECTED_TRIGGERED;
+		}
 		inline bool goal() const {
 			return GOAL;
 		}
@@ -544,6 +547,18 @@ class Entity {
 		
 		size_t maximumInvincibilityFrames = 0;
 		
+		Entity& setHealth(const double healthAmount) {
+			HEALTH = healthAmount;
+			if (HEALTH > maxHealth) {
+				HEALTH = maxHealth;
+			}
+			if (HEALTH < minHealth) {
+				HEALTH = minHealth;
+			}
+			
+			return *this;
+		}
+		
 		Entity& heal(const double healAmount = 1.0) {
 			HEALTH += healAmount;
 			if (HEALTH > maxHealth) {
@@ -552,6 +567,7 @@ class Entity {
 			
 			return *this;
 		}
+		
 		
 		Entity& damage(const double healAmount = 1.0, const bool overrideInvincibility = false) {
 			if (HEALTH > 0 && (overrideInvincibility || INVINCIBILITY_FRAMES == 0)) {

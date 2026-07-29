@@ -1,0 +1,11 @@
+name=1-4
+musicID=hammer_of_justice
+musicVolume=0.65
+musicLoopStart=63.824
+darknessTint=225,208,224
+firstLevelID=level1
+nextLevelID=level5
+cameraWidth=32
+groundTextureID=tile.dirt
+exposedGroundTextureID=tile.cherry_grass
+enabledSprites=background.setting_sun,background.setting_sky,background.setting_mountains,background.clouds_2,background.clouds_1,background.autumn_hills_2,background.autumn_hills_1,background.cherry_leaves

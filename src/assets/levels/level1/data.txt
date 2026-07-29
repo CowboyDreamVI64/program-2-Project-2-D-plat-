@@ -1,7 +1,11 @@
 name=1-1
-musicID=flower_castle
-musicVolume=0.5
-musicLoopStart=7.111
-darknessTint=225,208,224
+musicID=ground_edit
+musicVolume=0.35
+musicLoopStart=45.789
+darknessTint=240,249,255
 firstLevelID=level1
 nextLevelID=level2
+cameraWidth=26
+groundTextureID=tile.dirt
+exposedGroundTextureID=tile.green_grass
+enabledSprites=background.normal_sun,background.normal_sky,background.mario_mountains,background.clouds_2,background.clouds_1,background.green_hills_2,background.green_hills_1

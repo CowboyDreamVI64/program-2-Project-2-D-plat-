@@ -6,3 +6,6 @@ darknessTint=225,208,224
 firstLevelID=level1
 nextLevelID=level3
 cameraWidth=30
+groundTextureID=tile.dirt
+exposedGroundTextureID=tile.autumn_grass
+enabledSprites=background.setting_sun,background.setting_sky,background.setting_mountains,background.clouds_2,background.clouds_1,background.autumn_hills_2,background.autumn_hills_1

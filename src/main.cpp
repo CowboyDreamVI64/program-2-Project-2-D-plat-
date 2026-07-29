@@ -71,16 +71,26 @@ namespace frame {
 			{"enemy.knight.squish.2", "assets/textures/knight/squish2.png"},
 			{"enemy.knight.squish.3", "assets/textures/knight/squish3.png"},
 			{"tile.dirt", "assets/textures/tiles/dirt.png"},
+			{"tile.green_grass", "assets/textures/tiles/green_grass.png"},
 			{"tile.autumn_grass", "assets/textures/tiles/autumn_grass.png"},
+			{"tile.cherry_grass", "assets/textures/tiles/cherry_grass.png"},
 			{"tile.horizontal_spike", "assets/textures/tiles/horizontal_spike.png"},
 			{"tile.vertical_spike", "assets/textures/tiles/vertical_spike.png"},
 			{"tile.goal", "assets/textures/tiles/goal.png"},
 			{"background.clouds", "assets/textures/background/clouds.png"},
+			{"background.autumn_leaves", "assets/textures/background/autumn_leaves.png"},
+			{"background.cherry_leaves", "assets/textures/background/cherry_leaves.png"},
 			{"background.autumn_hills_1", "assets/textures/background/autumn_hills0.png"},
 			{"background.autumn_hills_2", "assets/textures/background/autumn_hills1.png"},
+			{"background.green_hills_1", "assets/textures/background/green_hills0.png"},
+			{"background.green_hills_2", "assets/textures/background/green_hills1.png"},
 			{"background.setting_sky", "assets/textures/background/setting_sky.png"},
 			{"background.setting_mountains", "assets/textures/background/setting_mountains.png"},
 			{"background.setting_sun", "assets/textures/background/setting_sun.png"},
+			{"background.normal_sky", "assets/textures/background/normal_sky.png"},
+			{"background.normal_mountains", "assets/textures/background/normal_mountains.png"},
+			{"background.mario_mountains", "assets/textures/background/mario_mountains.png"},
+			{"background.normal_sun", "assets/textures/background/normal_sun.png"},
 		    {"ui.heart", "assets/textures/collectable/heart.png"},
 		    {"ui.coin", "assets/textures/collectable/coin0.png"},
 			{"ui.player", "assets/textures/player/head.png"},
@@ -166,17 +176,25 @@ namespace frame {
 		sprites.add("enemy.knight", textures["enemy.knight.walk.0"], 0.1).add_tag("level_darken").add_tag("repeated_sprite").add_tag("repeated_sprite.entity").add_tag("repeated_sprite.entity.knight");
 		sprites.add("player", textures["player.idle"], 0.0).add_tag("level.darken").add_tag("player_sprite");
 		sprites.add("tile.goal", textures["tile.goal"], -0.5).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.goal");
-		sprites.add("tile.ground", textures["tile.dirt"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.ground");
+		sprites.add("tile.ground", textures[level.groundTextureID], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.ground");
 		sprites.add("tile.spike", textures["tile.vertical_spike"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.spike");
 		sprites.add("collectable.coin", textures["collectable.coin.0"], 0.05).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.collectable").add_tag("repeated_sprite.collectable.coin");
 		sprites.add("collectable.heart", textures["collectable.heart"], 0.05).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.collectable").add_tag("repeated_sprite.collectable.heart");
-		sprites.add("background.autumn_hills_1", textures["background.autumn_hills_1"], -2.0).add_tag("level.darken");
-		sprites.add("background.autumn_hills_2", textures["background.autumn_hills_2"], -3.0).add_tag("level.darken");
-		sprites.add("background.clouds_1", textures["background.clouds"], -4.0).setOpacity(0.85).add_tag("level.darken");
-		sprites.add("background.clouds_2", textures["background.clouds"], -6.0).setOpacity(0.4);
-		sprites.add("background.setting_mountains", textures["background.setting_mountains"], -5.0);
-		sprites.add("background.setting_sun", textures["background.setting_sun"], -7.0);
-		sprites.add("background.setting_sky", textures["background.setting_sky"], -8.0);
+		sprites.add("background.autumn_hills_1", textures["background.autumn_hills_1"], -2.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.autumn_hills_1"));
+		sprites.add("background.autumn_hills_2", textures["background.autumn_hills_2"], -3.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.autumn_hills_2"));
+		sprites.add("background.green_hills_1", textures["background.green_hills_1"], -2.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.green_hills_1"));
+		sprites.add("background.green_hills_2", textures["background.green_hills_2"], -3.0).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.green_hills_2"));
+		sprites.add("background.clouds_1", textures["background.clouds"], -4.0).setOpacity(0.85).add_tag("level.darken").setVisibility(level.spriteIsEnabled("background.clouds_1"));
+		sprites.add("background.clouds_2", textures["background.clouds"], -6.0).setOpacity(0.4).setVisibility(level.spriteIsEnabled("background.clouds_2"));
+		sprites.add("background.autumn_leaves", textures["background.autumn_leaves"], 1.0).setOpacity(0.3).setVisibility(level.spriteIsEnabled("background.autumn_leaves"));
+		sprites.add("background.cherry_leaves", textures["background.cherry_leaves"], 1.0).setOpacity(0.3).setVisibility(level.spriteIsEnabled("background.cherry_leaves"));
+		sprites.add("background.setting_mountains", textures["background.setting_mountains"], -5.0).setVisibility(level.spriteIsEnabled("background.setting_mountains"));
+		sprites.add("background.setting_sun", textures["background.setting_sun"], -7.0).setVisibility(level.spriteIsEnabled("background.setting_sun"));
+		sprites.add("background.setting_sky", textures["background.setting_sky"], -8.0).setVisibility(level.spriteIsEnabled("background.setting_sky"));
+		sprites.add("background.normal_mountains", textures["background.normal_mountains"], -5.0).setVisibility(level.spriteIsEnabled("background.normal_mountains"));
+		sprites.add("background.mario_mountains", textures["background.mario_mountains"], -5.0).setVisibility(level.spriteIsEnabled("background.mario_mountains"));
+		sprites.add("background.normal_sun", textures["background.normal_sun"], -7.0).setVisibility(level.spriteIsEnabled("background.normal_sun"));
+		sprites.add("background.normal_sky", textures["background.normal_sky"], -8.0).setVisibility(level.spriteIsEnabled("background.normal_sky"));
 		
 		//  This adds a new sound list to push sounds into called "jump."
 		sound_lists.add("sound_effects");
@@ -197,23 +215,34 @@ namespace frame {
 		//  This sets the camera's position to half of its dimensions (this offsets the camera towards the top-right by half of its lengths).
 		camera.position = camera.getPerceivedDimensions(game.resolution)/2;
 		
+		const Vec2 backgroundMultiplier = Vec2(level.backgroundSpriteMultiplier);
+		
 		unordered_map<string, ParallaxInstruction> parallaxSprites = {
-			{ "background.autumn_hills_1", ParallaxInstruction("background.autumn_hills_1", "background.autumn_hills_1", 5, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
-			{ "background.autumn_hills_2", ParallaxInstruction("background.autumn_hills_2", "background.autumn_hills_2", 10, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
-			{ "background.setting_mountains", ParallaxInstruction("background.setting_mountains", "background.setting_mountains", 35, {48, 27}, 0.0, true, false).setApparentPosition({24, 13.5}, camera.position).fitLoopToViewPort(camera) },
-			{ "background.clouds_1", ParallaxInstruction("background.clouds_1", "background.clouds", 12, {48, 21.6}, 0.0, true, true).setApparentPosition({16, 10.8}, camera.position).fitLoopToViewPort(camera) },
-			{ "background.clouds_2", ParallaxInstruction("background.clouds_2", "background.clouds", 45, {24, 10.8}, 0.0, true, true).setApparentPosition({12, 5.4}, camera.position).fitLoopToViewPort(camera) },
-			{ "background.setting_sun", ParallaxInstruction("background.setting_sun", "background.setting_sun", 500, {56, 56}, 0.0, false, false).setApparentPosition({8, 6}, camera.position).fitLoopToViewPort(camera) },
-			{ "background.setting_sky", ParallaxInstruction("background.setting_sky", "background.setting_sky", 500, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera) }
+			{ "background.autumn_hills_1", ParallaxInstruction("background.autumn_hills_1", "background.autumn_hills_1", 5, Vec2(32, 18)*backgroundMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.autumn_hills_2", ParallaxInstruction("background.autumn_hills_2", "background.autumn_hills_2", 10, Vec2(32, 18)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.green_hills_1", ParallaxInstruction("background.green_hills_1", "background.green_hills_1", 5, Vec2(32, 18)*backgroundMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.green_hills_2", ParallaxInstruction("background.green_hills_2", "background.green_hills_2", 10, Vec2(32, 18)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(16, 9)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.clouds_1", ParallaxInstruction("background.clouds_1", "background.clouds", 12, Vec2(48, 21.6)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(16, 10.8)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.autumn_leaves", ParallaxInstruction("background.autumn_leaves", "background.autumn_leaves", 0.75, Vec2(12, 12)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(6, 6)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.cherry_leaves", ParallaxInstruction("background.cherry_leaves", "background.cherry_leaves", 0.75, Vec2(12, 12)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(6, 6)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.clouds_2", ParallaxInstruction("background.clouds_2", "background.clouds", 45, Vec2(24, 10.8)*level.backgroundSpriteMultiplier, 0.0, true, true).setApparentPosition(Vec2(12, 5.4)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.setting_mountains", ParallaxInstruction("background.setting_mountains", "background.setting_mountains", 35, Vec2(48, 27)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(24, 13.5)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.setting_sun", ParallaxInstruction("background.setting_sun", "background.setting_sun", 500, Vec2(56, 56)*level.backgroundSpriteMultiplier, 0.0, false, false).setApparentPosition(Vec2(8, 6)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.setting_sky", ParallaxInstruction("background.setting_sky", "background.setting_sky", 500, Vec2(64, 36)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(32, 18)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.normal_mountains", ParallaxInstruction("background.normal_mountains", "background.normal_mountains", 35, Vec2(48, 27)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(24, 13.5)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.mario_mountains", ParallaxInstruction("background.mario_mountains", "background.mario_mountains", 35, Vec2(24, 13.5)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(12, 6.75)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.normal_sun", ParallaxInstruction("background.normal_sun", "background.normal_sun", 500, Vec2(56, 56)*level.backgroundSpriteMultiplier, 0.0, false, false).setApparentPosition(Vec2(8, 12)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) },
+			{ "background.normal_sky", ParallaxInstruction("background.normal_sky", "background.normal_sky", 500, Vec2(64, 36)*level.backgroundSpriteMultiplier, 0.0, true, false).setApparentPosition(Vec2(32, 18)*backgroundMultiplier, camera.position).fitLoopToViewPort(camera) }
 		};
 		
 		//  This creates a player entity.
 		Entity player = Entity(EntityBehaviorTypes::Player, 3.0, level.playerStartPosition + Vec2(0.0, 1.0), {0.7, 1.8}, {0.0, -56.0}, 8, 14.2, 1.6, 2);
 		player.accelerationConstJumpingMultiplier.y = 0.32;
 		player.maxJumpBufferFrames = tps/3;
-		player.skidMultiplier = 0.35;
+		player.skidMultiplier = 0.15;
 		player.autoJump = false;
 		player.maximumInvincibilityFrames = 1.5*tps;
+		player.setHealth(TOTAL_HEALTH);
 		player.animation_state = AnimationState({
 			{ "idle",
 				Animation({
@@ -401,9 +430,14 @@ namespace frame {
 					if (player.heart_collected_triggered()) {
 						sound_lists["sound_effects"].add(sound_buffers["power_up"], 0.6f, 0.0f, 1, 1.0, true);
 					}
+					if (player.life_collected_triggered()) {
+						sound_lists["sound_effects"].add(sound_buffers["one_up"], 0.6f, 0.0f, 1, 1.0, true);
+					}
 					
 					parallaxSprites["background.clouds_1"].setActualPosition(parallaxSprites["background.clouds_1"].getActualPosition() + Vec2(2, 0)/tps);
 					parallaxSprites["background.clouds_2"].setActualPosition(parallaxSprites["background.clouds_2"].getActualPosition() + Vec2(2, 0)/tps);
+					parallaxSprites["background.autumn_leaves"].setActualPosition(parallaxSprites["background.autumn_leaves"].getActualPosition() + Vec2(-1, -1)/tps);
+					parallaxSprites["background.cherry_leaves"].setActualPosition(parallaxSprites["background.cherry_leaves"].getActualPosition() + Vec2(-1.5, -1.5)/tps);
 					
 					player.tickAnimation(tps);
 					player.updateAnimationState();
@@ -536,9 +570,9 @@ namespace frame {
 								for (size_t X = cameraIndexRangeContext[0][0]; X < cameraIndexRangeContext[1][0]; ++X) {
 									if (spritePtr->has_tag("repeated_sprite.tile.ground") && level.tilemap.getTileCopy(X, Y).isGround()) {
 										if (!level.tilemap.getTileCopy(X, Y + 1).isSolid()) {	
-											spritePtr->setTexture(textures["tile.autumn_grass"]);
+											spritePtr->setTexture(textures[level.exposedGroundTextureID]);
 										} else {
-											spritePtr->setTexture(textures["tile.dirt"]);
+											spritePtr->setTexture(textures[level.groundTextureID]);
 										}
 										camera.setInViewport(game, sprites["tile.ground"], Vec2(X + 0.5, Y + 0.5));
 										game.ExtendedDraw(spritePtr);
@@ -620,19 +654,19 @@ namespace frame {
 	}
 	
 	void game_over() {
-		game_menu();
 		TOTAL_COINS = 0;
 		TOTAL_SCORE = 0;
 		TOTAL_LIVES = 3;
 		TOTAL_HEALTH = 3;
+		game_menu();
 	}
 	
-	void win_game() {	
-		game_menu();
+	void win_game() {
 		TOTAL_COINS = 0;
 		TOTAL_SCORE = 0;
 		TOTAL_LIVES = 3;
-		TOTAL_HEALTH = 3;
+		TOTAL_HEALTH = 3;	
+		game_menu();
 	}
 	
 	//  This state controls what happens when the application ends.
