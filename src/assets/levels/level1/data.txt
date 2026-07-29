@@ -3,3 +3,5 @@ musicID=flower_castle
 musicVolume=0.5
 musicLoopStart=7.111
 darknessTint=225,208,224
+resetLevelID=level1
+nextLevelID=level2

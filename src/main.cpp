@@ -13,14 +13,20 @@
 
 
 
+unordered_map<string, Level> levels = {
+	{ "level1", Level("level1") }
+};
 
-
-
+string currentLevel = "level1";
 
 //  This namespace will contain every state of the game, like levels and menus.
 namespace frame {
 	void start_application();
-	void test_level();
+	void game_menu();
+	void level_transition();
+	void active_level();
+	void game_over();
+	void win_game();
 	void end_application();
 }
 
@@ -63,19 +69,27 @@ namespace frame {
 			{"enemy.knight.squish.1", "assets/textures/knight/squish1.png"},
 			{"enemy.knight.squish.2", "assets/textures/knight/squish2.png"},
 			{"enemy.knight.squish.3", "assets/textures/knight/squish3.png"},
-			{"sky", "assets/textures/background/sky.png"},
-			{"dirt", "assets/textures/tiles/dirt.png"},
-			{"grass", "assets/textures/tiles/grass.png"},
-			{"horizontal_spike", "assets/textures/tiles/horizontal_spike.png"},
-			{"vertical_spike", "assets/textures/tiles/vertical_spike.png"},
-			{"hills1", "assets/textures/background/hills1.png"},
-			{"hills2", "assets/textures/background/hills2.png"},
-			{"clouds", "assets/textures/background/clouds.png"},
-			{"mountains", "assets/textures/background/mountains.png"},
-			{"sun", "assets/textures/sun.png"},
-		    {"ui.heart", "assets/textures/heart.png"},
-		    {"ui.coin", "assets/textures/coin/0.png"},
-			{"ui.player", "assets/textures/player/head.png"}
+			{"tile.dirt", "assets/textures/tiles/dirt.png"},
+			{"tile.autumn_grass", "assets/textures/tiles/autumn_grass.png"},
+			{"tile.horizontal_spike", "assets/textures/tiles/horizontal_spike.png"},
+			{"tile.vertical_spike", "assets/textures/tiles/vertical_spike.png"},
+			{"tile.goal", "assets/textures/tiles/goal.png"},
+			{"background.clouds", "assets/textures/background/clouds.png"},
+			{"background.autumn_hills_1", "assets/textures/background/autumn_hills0.png"},
+			{"background.autumn_hills_2", "assets/textures/background/autumn_hills1.png"},
+			{"background.setting_sky", "assets/textures/background/setting_sky.png"},
+			{"background.setting_mountains", "assets/textures/background/setting_mountains.png"},
+			{"background.setting_sun", "assets/textures/background/setting_sun.png"},
+		    {"ui.heart", "assets/textures/collectable/heart.png"},
+		    {"ui.coin", "assets/textures/collectable/coin0.png"},
+			{"ui.player", "assets/textures/player/head.png"},
+			{"collectable.heart", "assets/textures/collectable/heart.png"},
+			{"collectable.coin.0", "assets/textures/collectable/coin0.png"},
+			{"collectable.coin.1", "assets/textures/collectable/coin1.png"},
+			{"collectable.coin.2", "assets/textures/collectable/coin2.png"},
+			{"collectable.coin.3", "assets/textures/collectable/coin3.png"},
+			{"collectable.coin.4", "assets/textures/collectable/coin4.png"},
+			{"collectable.coin.5", "assets/textures/collectable/coin5.png"}
 		});
 		
 		//  This loads sound data in the format {soundBufferID, fileDirectory}.
@@ -88,7 +102,8 @@ namespace frame {
 			{"enemy_damage", "assets/sounds/enemy_damage.ogg"},
 			{"coin", "assets/sounds/coin.ogg"},
 			{"power_up", "assets/sounds/power_up.ogg"},
-			{"one_up", "assets/sounds/one_up.ogg"}
+			{"one_up", "assets/sounds/one_up.ogg"},
+			{"pause", "assets/sounds/pause.ogg"}
 		});
 		
 		//  This stops everything from looking blurry.
@@ -106,13 +121,22 @@ namespace frame {
 		
 		//  If the game window is stable, the state moves to test_level.
 		if (game.stableState()) {
-			test_level();
+			game_menu();
 		}
 		return;
 	}
 	
+	void game_menu() {
+		level_transition();
+	}
+	
+	void level_transition() {
+		levels[currentLevel].loadLevel();
+		active_level();
+	}
+	
 	//  This state is a test level.
-	void test_level() {
+	void active_level() {
 		//  This gives us a custom boolean to set to false at any time to change the state.
 		bool frameState = true;
 		
@@ -125,8 +149,7 @@ namespace frame {
 		//  This is just the amount of time that passes between ticks.
 		const double DELTA = 1.0/tps;
 		
-		Level level("level1");
-		level.loadLevel();
+		Level level = levels[currentLevel];
 		
 		//  This starts a stopwatch that accumulates over the main window loop then gets analyzed in the main game loop/physics to check how many times the physics should be calculated.
 		fstopwatches.start("accumulated_game_time");
@@ -134,17 +157,20 @@ namespace frame {
 		fstopwatches.start("death_time").pause();
 		
 		//  This adds a player sprite and a sky sprite.
-		sprites.add("player", textures["player.idle"], 0.0).add_tag("level.darken").add_tag("player_sprite");
 		sprites.add("enemy.knight", textures["enemy.knight.walk.0"], 0.1).add_tag("level_darken").add_tag("repeated_sprite").add_tag("repeated_sprite.entity").add_tag("repeated_sprite.entity.knight");
-		sprites.add("ground", textures["dirt"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.ground");
-		sprites.add("spike", textures["vertical_spike"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.spike");
-		sprites.add("hills1", textures["hills1"], -2.0).add_tag("level.darken");
-		sprites.add("hills2", textures["hills2"], -3.0).add_tag("level.darken");
-		sprites.add("clouds1", textures["clouds"], -4.0).setOpacity(0.85).add_tag("level.darken");
-		sprites.add("mountains", textures["mountains"], -5.0);
-		sprites.add("clouds2", textures["clouds"], -6.0).setOpacity(0.4);
-		sprites.add("sun", textures["sun"], -7.0);
-		sprites.add("sky", textures["sky"], -8.0);
+		sprites.add("player", textures["player.idle"], 0.0).add_tag("level.darken").add_tag("player_sprite");
+		sprites.add("tile.goal", textures["tile.goal"], -0.5).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.goal");
+		sprites.add("tile.ground", textures["tile.dirt"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.ground");
+		sprites.add("tile.spike", textures["tile.vertical_spike"], -1.0).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.tile").add_tag("repeated_sprite.tile.spike");
+		sprites.add("collectable.coin", textures["collectable.coin.0"], 0.05).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.collectable").add_tag("repeated_sprite.collectable.coin");
+		sprites.add("collectable.heart", textures["collectable.heart"], 0.05).add_tag("level.darken").add_tag("repeated_sprite").add_tag("repeated_sprite.collectable").add_tag("repeated_sprite.collectable.heart");
+		sprites.add("background.autumn_hills_1", textures["background.autumn_hills_1"], -2.0).add_tag("level.darken");
+		sprites.add("background.autumn_hills_2", textures["background.autumn_hills_2"], -3.0).add_tag("level.darken");
+		sprites.add("background.clouds_1", textures["background.clouds"], -4.0).setOpacity(0.85).add_tag("level.darken");
+		sprites.add("background.clouds_2", textures["background.clouds"], -6.0).setOpacity(0.4);
+		sprites.add("background.setting_mountains", textures["background.setting_mountains"], -5.0);
+		sprites.add("background.setting_sun", textures["background.setting_sun"], -7.0);
+		sprites.add("background.setting_sky", textures["background.setting_sky"], -8.0);
 		
 		//  This adds a new sound list to push sounds into called "jump."
 		sound_lists.add("sound_effects");
@@ -161,13 +187,13 @@ namespace frame {
 		camera.position = camera.getPerceivedDimensions(game.resolution)/2;
 		
 		unordered_map<string, ParallaxInstruction> parallaxSprites = {
-			{ "hills1", ParallaxInstruction("hills1", "hills1", 5, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
-			{ "hills2", ParallaxInstruction("hills2", "hills2", 10, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
-			{ "clouds1", ParallaxInstruction("clouds1", "clouds", 12, {48, 21.6}, 0.0, true, true).setApparentPosition({16, 10.8}, camera.position).fitLoopToViewPort(camera) },
-			{ "mountains", ParallaxInstruction("mountains", "mountains", 35, {48, 27}, 0.0, true, false).setApparentPosition({24, 13.5}, camera.position).fitLoopToViewPort(camera) },
-			{ "clouds2", ParallaxInstruction("clouds2", "clouds", 45, {24, 10.8}, 0.0, true, true).setApparentPosition({12, 5.4}, camera.position).fitLoopToViewPort(camera) },
-			{ "sun", ParallaxInstruction("sun", "sun", 500, {56, 56}, 0.0, false, false).setApparentPosition({8, 6}, camera.position).fitLoopToViewPort(camera) },
-			{ "sky", ParallaxInstruction("sky", "sky", 500, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera) }
+			{ "background.autumn_hills_1", ParallaxInstruction("background.autumn_hills_1", "background.autumn_hills_1", 5, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
+			{ "background.autumn_hills_2", ParallaxInstruction("background.autumn_hills_2", "background.autumn_hills_2", 10, {32, 18}, 0.0, true, false).setApparentPosition({16, 9}, camera.position).fitLoopToViewPort(camera) },
+			{ "background.setting_mountains", ParallaxInstruction("background.setting_mountains", "background.setting_mountains", 35, {48, 27}, 0.0, true, false).setApparentPosition({24, 13.5}, camera.position).fitLoopToViewPort(camera) },
+			{ "background.clouds_1", ParallaxInstruction("background.clouds_1", "background.clouds", 12, {48, 21.6}, 0.0, true, true).setApparentPosition({16, 10.8}, camera.position).fitLoopToViewPort(camera) },
+			{ "background.clouds_2", ParallaxInstruction("background.clouds_2", "background.clouds", 45, {24, 10.8}, 0.0, true, true).setApparentPosition({12, 5.4}, camera.position).fitLoopToViewPort(camera) },
+			{ "background.setting_sun", ParallaxInstruction("background.setting_sun", "background.setting_sun", 500, {56, 56}, 0.0, false, false).setApparentPosition({8, 6}, camera.position).fitLoopToViewPort(camera) },
+			{ "background.setting_sky", ParallaxInstruction("background.setting_sky", "background.setting_sky", 500, {64, 36}, 0.0, true, false).setApparentPosition({32, 18}, camera.position).fitLoopToViewPort(camera) }
 		};
 		
 		//  This creates a player entity.
@@ -212,6 +238,16 @@ namespace frame {
 			}
 		}, "idle");
 		
+		double coinAnimationTime = 0.0;
+		Animation coinAnimation({
+			AnimationFrame("collectable.coin.0", 0.16, 0.9),
+			AnimationFrame("collectable.coin.1", 0.12, 0.9),
+			AnimationFrame("collectable.coin.2", 0.12, 1.5),
+			AnimationFrame("collectable.coin.3", 0.12, 1.5),
+			AnimationFrame("collectable.coin.4", 0.12, 1.5),
+			AnimationFrame("collectable.coin.5", 0.12, 1.5)
+		}, true);
+		
 		//  Here for debugging purposes.
 		bool mouseDraggingPlayer = false;
 		bool JKEY = false, LKEY = false, IKEY = false, OKEY = false, UKEY = false;
@@ -221,6 +257,9 @@ namespace frame {
 		//  been freshly cleared for this state.
 		hud.build();
 		
+		bool PAUSED = false;
+		bool PAUSED_PRESSED = false;
+					
 		while (game.stableState(frameState)) {
 			//  This checks if the window is trying to close.
 			while (optional frameEvent = game.window->pollEvent()) {
@@ -248,7 +287,20 @@ namespace frame {
 			//  This ticks the game physics depending on how much accumulated game time there is.
 			while (fstopwatches["accumulated_game_time"].frame >= 1.0f/tps) {
 				fstopwatches["accumulated_game_time"].subtract(1.0f/tps);
-				if (fstopwatches["game_freeze_time"].frame <= 0.0f) {
+				
+				bool P_KEY_PRESSED = game.pollForKey(sf::Keyboard::Key::P);
+				if (P_KEY_PRESSED && !PAUSED_PRESSED && !player.goal() && player.health() > 0.0) {
+					PAUSED = !PAUSED;
+					sound_lists["sound_effects"].add(sound_buffers["pause"], 0.4f, 0.0f, 1, 1.0, true);
+					if (PAUSED) {
+						musics.setVolume(musics.getVolume()*0.1);
+					} else {
+						musics.setVolume(musics.getVolume()*10);
+					}
+				}
+				PAUSED_PRESSED = P_KEY_PRESSED;
+				
+				if (fstopwatches["game_freeze_time"].frame <= 0.0f && !PAUSED) {
 					
 					
 	//  ------------------------------ Backend Game Loop Starts Here ------------------------------
@@ -263,6 +315,7 @@ namespace frame {
 					if (player.health() > 0) {
 						player.resolveBlockCollision(level.tilemap);
 						player.resolveEntityCollision(level.entities);
+						player.resolveCollectableCollision(level.collectables);
 					}
 					
 					for (Entity& entity : level.entities) {
@@ -275,14 +328,37 @@ namespace frame {
 						}
 					}
 					
-					if (player.health() <= 0) {
+					if (player.position.y < -3) {
+						
+					}
+					
+					if (player.goal()) {
+						if (player.goal_triggered()) {
+							musics["music"].pause();
+							level.status = LevelStatus::Complete;
+							fstopwatches["game_freeze_time"].set(6);
+							fstopwatches["accumulated_game_time"].set(0);
+							if (!musics.exists("victory")) {
+								musics.play("victory", reinterpret_cast<const char*>(assets["assets/sounds/music/victory.ogg"].data()), assets["assets/sounds/music/victory.ogg"].size(), sounds.getVolume()*0.7, true, false);
+							}
+						} else {
+							frameState = false;
+						}
+					} else if (player.health() <= 0.0) {
 						if (player.damage_triggered()) {
+							--TOTAL_LIVES;
 							musics["music"].pause();
 							fstopwatches["game_freeze_time"].set(0.6);
 							player.acceleration_const.y = -40;
 							player.velocity = Vec2(0, 18);
 							sound_lists["sound_effects"].add(sound_buffers["fatal_damage"], 0.7f, 0.0f, 1, 1.0, true);
 							fstopwatches["accumulated_game_time"].set(0);
+							
+							if (TOTAL_LIVES == 0) {
+								level.status = LevelStatus::GameOver;
+							} else {
+								level.status = LevelStatus::Failed;
+							}
 						}
 						if (!player.damage_triggered()) {
 							fstopwatches["death_time"].add(1.0/tps);
@@ -333,9 +409,15 @@ namespace frame {
 					if (player.enemy_defeat_triggered()) {
 						sound_lists["sound_effects"].add(sound_buffers["enemy_damage"], 1.0f, 0.0f, 1, 1.0, true);
 					}
+					if (player.coin_collected_triggered()) {
+						sound_lists["sound_effects"].add(sound_buffers["coin"], 0.15f, 0.0f, 1, 1.0, true);
+					}
+					if (player.heart_collected_triggered()) {
+						sound_lists["sound_effects"].add(sound_buffers["power_up"], 0.6f, 0.0f, 1, 1.0, true);
+					}
 					
-					parallaxSprites["clouds1"].setActualPosition(parallaxSprites["clouds1"].getActualPosition() + Vec2(2, 0)/tps);
-					parallaxSprites["clouds2"].setActualPosition(parallaxSprites["clouds2"].getActualPosition() + Vec2(2, 0)/tps);
+					parallaxSprites["background.clouds_1"].setActualPosition(parallaxSprites["background.clouds_1"].getActualPosition() + Vec2(2, 0)/tps);
+					parallaxSprites["background.clouds_2"].setActualPosition(parallaxSprites["background.clouds_2"].getActualPosition() + Vec2(2, 0)/tps);
 					
 					player.tickAnimation(tps);
 					player.updateAnimationState();
@@ -344,6 +426,8 @@ namespace frame {
 						entity.tickAnimation(tps);
 						entity.updateAnimationState();
 					}
+					
+					coinAnimationTime += 1.0/tps;
 	//  ------------------------------ Frontend Game Loop Ends Here ------------------------------
 					
 					
@@ -356,6 +440,10 @@ namespace frame {
 
 			if (fstopwatches["death_time"].frame > 0 && player.health() <= 0.0 && !player.damage_triggered() && !musics.exists("death_music")) {
 				musics.play("death_music", reinterpret_cast<const char*>(assets["assets/sounds/music/death.ogg"].data()), assets["assets/sounds/music/death.ogg"].size(), sounds.getVolume()*0.7, true, false);
+			}
+			
+			if (fstopwatches["death_time"].frame > 3) {
+				frameState = false;
 			}
 
 			//  This centers the camera position to the player position without the camera clipping out of bounds.
@@ -407,7 +495,9 @@ namespace frame {
 			
 			//  This refreshes every HUD element (health hearts, coins, points, lives, game over text)
 			//  to match the current playerStats.
+			cout << "AAAA";
 			hud.update(playerStats);
+			cout << "ZZZZ";
 			
 			vector<ExtendedSprite*> sortedSprites = sprites.getExtendedVector();
 			vector<ExtendedText*> sortedTexts = texts.getExtendedVector();
@@ -433,6 +523,20 @@ namespace frame {
 					}
 					
 					if (spritePtr->has_tag("repeated_sprite")) {
+						if (spritePtr->has_tag("repeated_sprite.collectable")) {
+							for (Collectable collectable : level.collectables) {
+								if (!collectable.collected) {
+									if (spritePtr->has_tag("repeated_sprite.collectable.coin") && collectable.isCoin()) {
+										AnimationFrame coinAnimationFrame = coinAnimation.getFrame(coinAnimation.getIndexAtLength(coinAnimationTime));
+										camera.setInViewport(game, sprites["collectable.coin"].setTexture(textures[coinAnimationFrame.TextureID]), collectable.position, coinAnimationFrame.size);
+										game.ExtendedDraw(spritePtr);
+									} else if (spritePtr->has_tag("repeated_sprite.collectable.heart") && collectable.isHeart()) {
+										camera.setInViewport(game, sprites["collectable.heart"], collectable.position, 1.0);
+										game.ExtendedDraw(spritePtr);
+									}
+								}
+							}
+						}
 						if (spritePtr->has_tag("repeated_sprite.entity")) {
 							if (spritePtr->has_tag("repeated_sprite.entity.knight")) {
 								for (Entity& entity : level.entities) {
@@ -447,31 +551,34 @@ namespace frame {
 								for (size_t X = cameraIndexRangeContext[0][0]; X < cameraIndexRangeContext[1][0]; ++X) {
 									if (spritePtr->has_tag("repeated_sprite.tile.ground") && level.tilemap.getTileCopy(X, Y).isGround()) {
 										if (!level.tilemap.getTileCopy(X, Y + 1).isSolid()) {	
-											spritePtr->setTexture(textures["grass"]);
+											spritePtr->setTexture(textures["tile.autumn_grass"]);
 										} else {
-											spritePtr->setTexture(textures["dirt"]);
+											spritePtr->setTexture(textures["tile.dirt"]);
 										}
-										camera.setInViewport(game, sprites["ground"], Vec2(X + 0.5, Y + 0.5));
+										camera.setInViewport(game, sprites["tile.ground"], Vec2(X + 0.5, Y + 0.5));
 										game.ExtendedDraw(spritePtr);
 									} else if (spritePtr->has_tag("repeated_sprite.tile.spike") && level.tilemap.getTileCopy(X, Y).isHazard()) {
 										bool flipHorizontally = false;
 										bool flipVertically = false;
 										
 										if (level.tilemap.getTileCopy(X, Y - 1).isSolid()) {
-											spritePtr->setTexture(textures["vertical_spike"]);
+											spritePtr->setTexture(textures["tile.vertical_spike"]);
 										} else if (level.tilemap.getTileCopy(X, Y + 1).isSolid()) {
-											spritePtr->setTexture(textures["vertical_spike"]);
+											spritePtr->setTexture(textures["tile.vertical_spike"]);
 											flipVertically = true;
 										} else if (level.tilemap.getTileCopy(X - 1, Y).isSolid()) {
-											spritePtr->setTexture(textures["horizontal_spike"]);
+											spritePtr->setTexture(textures["tile.horizontal_spike"]);
 										} else if (level.tilemap.getTileCopy(X + 1, Y).isSolid()) {
-											spritePtr->setTexture(textures["horizontal_spike"]);
+											spritePtr->setTexture(textures["tile.horizontal_spike"]);
 											flipHorizontally = true;
 										} else {
-											spritePtr->setTexture(textures["vertical_spike"]);
+											spritePtr->setTexture(textures["tile.vertical_spike"]);
 										}
 										
-										camera.setInViewport(game, sprites["spike"], Vec2(X + 0.5, Y + 0.5), Vec2(flipHorizontally ? -1.0 : 1.0, flipVertically ? -1.0 : 1.0));
+										camera.setInViewport(game, sprites["tile.spike"], Vec2(X + 0.5, Y + 0.5), Vec2(flipHorizontally ? -1.0 : 1.0, flipVertically ? -1.0 : 1.0));
+										game.ExtendedDraw(spritePtr);
+									} else if (spritePtr->has_tag("repeated_sprite.tile.goal") && level.tilemap.getTileCopy(X, Y).isGoal()) {
+										camera.setInViewport(game, sprites["tile.goal"], Vec2(X + 0.5, Y + 1.0), Vec2(1.0, 2.0));
 										game.ExtendedDraw(spritePtr);
 									}
 								}
@@ -496,6 +603,8 @@ namespace frame {
 			
 		}
 		
+		hud.unbuild();
+		
 		//  This clears everything (like sprites, music, and sounds) from the global buffers EXCEPT for textures, sound buffers, and fonts.
 		clearall({Omit::Textures, Omit::SoundBuffers, Omit::Fonts});
 		for (auto& currentPS : parallaxSprites) {
@@ -504,12 +613,41 @@ namespace frame {
 		
 		//  This move to the next state (which is end_application for now).
 		if (game.stableState(!closeWindow)) {
+			if (level.status == LevelStatus::Failed) {
+				level_transition();
+			} else if (level.status == LevelStatus::GameOver) {
+				game_over();
+			} else if (level.status == LevelStatus::Complete) {
+				if (levels.count(level.nextLevelID) != 0) {
+					currentLevel = level.nextLevelID;
+					level_transition();
+				} else {
+					currentLevel = level.firstLevelID;
+					win_game();
+				}
+			}
 			end_application();
 		} else if (closeWindow) {
 			//  This move to the end_application state if the window is trying to close.
 			end_application();
 		}
 		return;
+	}
+	
+	void game_over() {
+		game_menu();
+		TOTAL_COINS = 0;
+		TOTAL_SCORE = 0;
+		TOTAL_LIVES = 3;
+		TOTAL_HEALTH = 3;
+	}
+	
+	void win_game() {	
+		game_menu();
+		TOTAL_COINS = 0;
+		TOTAL_SCORE = 0;
+		TOTAL_LIVES = 3;
+		TOTAL_HEALTH = 3;
 	}
 	
 	//  This state controls what happens when the application ends.

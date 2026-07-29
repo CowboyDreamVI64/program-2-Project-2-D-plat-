@@ -88,6 +88,11 @@ class Entity {
 		bool HEAD_HIT_OBJECT_TRIGGERED = false;
 		bool DAMAGE_TRIGGERED = false;
 		bool ENEMY_DEFEAT_TRIGGERED = false;
+		bool COIN_COLLECTED_TRIGGERED = false;
+		bool HEART_COLLECTED_TRIGGERED = false;
+		bool LIFE_COLLECTED_TRIGGERED = false;
+		bool GOAL = false;
+		bool GOAL_TRIGGERED = false;
 		size_t JUMP_BUFFER = 0;
 		size_t INVINCIBILITY_FRAMES = 0;
 		
@@ -204,6 +209,18 @@ class Entity {
 		}
 		inline bool enemy_defeat_triggered() const {
 			return ENEMY_DEFEAT_TRIGGERED;
+		}
+		inline bool coin_collected_triggered() const {
+			return COIN_COLLECTED_TRIGGERED;
+		}
+		inline bool heart_collected_triggered() const {
+			return HEART_COLLECTED_TRIGGERED;
+		}
+		inline bool goal() const {
+			return GOAL;
+		}
+		inline bool goal_triggered() const {
+			return GOAL_TRIGGERED;
 		}
 		inline double health() const {
 			return HEALTH;
@@ -372,6 +389,10 @@ class Entity {
 		//  A bunch of physics and math that calculates the momentum and position of the entity as well as changing some triggers.
 		Entity& tickPhysics(const size_t& TPS) {
 			ENEMY_DEFEAT_TRIGGERED = false;
+			COIN_COLLECTED_TRIGGERED = false;
+			HEART_COLLECTED_TRIGGERED = false;
+			LIFE_COLLECTED_TRIGGERED = false;
+			GOAL_TRIGGERED = false;
 			
 			if (behaviorType == EntityBehaviorTypes::Enemy && HEALTH <= 0.0) {
 				speed = 0;
@@ -559,7 +580,12 @@ class Entity {
 					
 					const CollisionContext currentTileCollision = CollisionContext::resolve(position, HITBOX, Vec2(X,Y) + 0.5, 1.0);
 					if (currentTileCollision.collision) {
-						if (behaviorType == EntityBehaviorTypes::Player && inputTileMap.getTileCopy(X,Y).isHazard()) {
+						if (behaviorType == EntityBehaviorTypes::Player && inputTileMap.getTileCopy(X,Y).isGoal()) {
+							if (!GOAL) {
+								GOAL_TRIGGERED = true;
+							}
+							GOAL = true;
+						} else if (behaviorType == EntityBehaviorTypes::Player && inputTileMap.getTileCopy(X,Y).isHazard()) {
 							damage(1.0);
 							if (HEALTH > 0.0) {
 								if (behaviorType == EntityBehaviorTypes::Player) {
@@ -623,6 +649,7 @@ class Entity {
 						}
 					} else if (behaviorType == EntityBehaviorTypes::Player && inputEntity.health() > 0) {
 						if (currentEntityCollision.collisionDown) {
+							TOTAL_SCORE += ENEMY_DEFEAT_SCORE;
 							inputEntity.damage(1);
 							ENEMY_DEFEAT_TRIGGERED = true;
 							position.y = inputEntity.position.y + inputEntity.hitbox().y + HITBOX.y/2;
@@ -652,6 +679,42 @@ class Entity {
 					continue;
 				}
 				resolveEntityCollision(collisionEntity);
+			}
+			return *this;
+		}
+		
+		Entity& resolveCollectableCollision(Collectable& inputCollectable) {
+			if (behaviorType == EntityBehaviorTypes::Player && !inputCollectable.collected) {
+				const CollisionContext currentCollectableCollision = CollisionContext::resolve(position, HITBOX, inputCollectable.position, 0.5);
+				if (currentCollectableCollision.collision) {
+					if (inputCollectable.isCoin()) {
+						++TOTAL_COINS;
+						TOTAL_SCORE += COIN_SCORE;
+						while (TOTAL_COINS >= 100) {
+							TOTAL_SCORE += LIFE_SCORE;
+							LIFE_COLLECTED_TRIGGERED = true;
+							++TOTAL_LIVES;
+							TOTAL_COINS -= 100;
+						}
+						COIN_COLLECTED_TRIGGERED = true;
+						inputCollectable.collected = true;
+					} else if (inputCollectable.isHeart()) {
+						TOTAL_SCORE += HEART_SCORE;
+						heal(1.0);
+						HEART_COLLECTED_TRIGGERED = true;
+						inputCollectable.collected = true;
+					}
+				}
+			}
+			
+			return *this;
+		}
+		
+		Entity& resolveCollectableCollision(vector<Collectable>& inputCollectables) {
+			if (behaviorType == EntityBehaviorTypes::Player) {
+				for (Collectable& collisionCollectable : inputCollectables) {
+					resolveCollectableCollision(collisionCollectable);
+				}
 			}
 			return *this;
 		}

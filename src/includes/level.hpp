@@ -1,14 +1,31 @@
+namespace LevelStatus {
+	constexpr short InProgress = 0;
+	constexpr short Complete = 1;
+	constexpr short Failed = 2;
+	constexpr short GameOver = 3;
+}
+
 class Level {
 	public:
 		string levelID;
+		short status = LevelStatus::InProgress;
+		
+		string firstLevelID;
+		string nextLevelID;
 		
 		string levelName;
 		TileMap tilemap;
 		vector<Entity> entities;
+		vector<Collectable> collectables;
 		double musicLoopStart;
 		double musicVolume;
 		string musicPath;
 		sf::Color darknessTint;
+		
+		bool clouds_1 = false;
+		bool clouds_2 = false;
+		bool autumn_hills_1 = false;
+		bool autumn_hills_2 = false;
 		
 		Vec2 playerStartPosition = 0;
 		
@@ -22,13 +39,16 @@ class Level {
 		}
 		
 		Level& loadLevel() {
-			unordered_map<string, string> levelData = parseKeyValueText(getAssetsText("assets/levels/" + levelID + "/data.txt"));
+			entities = vector<Entity>();
+			collectables = vector<Collectable>();
 			tilemap.loadFromMemory(assets["assets/levels/" + levelID + "/tilemap.txt"].data(), assets["assets/levels/" + levelID + "/tilemap.txt"].size());
+			
+			unordered_map<string, string> levelData = parseKeyValueText(getAssetsText("assets/levels/" + levelID + "/data.txt"));
 			
 			for (size_t Y = 0; Y < tilemap.maxHeight; ++Y) {
 				for (size_t X = 0; X < tilemap.maxWidth; ++X) {
 					if (tilemap.getTileCopy(X, Y).isEnemy()) {
-						Entity newEnemy = Entity(EntityBehaviorTypes::Enemy, 1.0, Vec2(X, Y) + 0.5, {0.9, 0.6}, {0.0, -48.0}, 2.5, 14.2);
+						Entity newEnemy = Entity(EntityBehaviorTypes::Enemy, 1.0, Vec2(X, Y) + 0.5, {1.0, 0.6}, {0.0, -48.0}, 2.5, 14.2);
 						newEnemy.snapToSpeed = true;
 						
 						if (frandom() > 0.5) {
@@ -61,6 +81,9 @@ class Level {
 						
 						entities.push_back(newEnemy);
 						
+						tilemap.setTile(X, Y, TileType::Air);
+					} else if (tilemap.getTileCopy(X, Y).isCollectable()) {
+						collectables.push_back(Collectable(tilemap.getTileCopy(X, Y).isHeart() ? CollectableType::Heart : CollectableType::Coin, Vec2(X, Y) + 0.5));
 						tilemap.setTile(X, Y, TileType::Air);
 					}
 				}
@@ -120,6 +143,18 @@ class Level {
 				}
 			}
 			
+			if (levelData.count("nextLevelID") != 0) {
+				nextLevelID = levelData.at("nextLevelID");
+			} else {
+				nextLevelID = "END";
+			}
+			
+			if (levelData.count("firstLevelID") != 0) {
+				firstLevelID = levelData.at("firstLevelID");
+			} else {
+				firstLevelID = FIRST_LEVEL_ID;
+			}
+			
 			return *this;
 		}
 		
@@ -133,5 +168,5 @@ class Level {
 			return *this;
 		}
 		
-		Level(const string& inputLevelID) : levelID(inputLevelID) {}
+		Level(const string& inputLevelID = "level1") : levelID(inputLevelID) {}
 };

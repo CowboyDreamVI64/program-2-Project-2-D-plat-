@@ -47,32 +47,39 @@ class HUD {
 		//  Creates every sprite/text element the HUD needs. Safe to call again later (e.g. after a
 		//  clearall() wipes the sprite/text containers between game states) to rebuild everything.
 		HUD& build() {
-			sprites.add("hud.coin_icon", textures[coinTextureID], z)
-				.resizeToFit(sf::Vector2f({iconSize, iconSize}))
-				.setPosition(sf::Vector2f({paddingX, paddingY}));
-			
-			texts.add("hud.coin_text", fonts[fontID], z)
-				.setCharacterSize(22)
-				.setFillColor(sf::Color::White);
-			
-			sprites.add("hud.lives_icon", textures[livesTextureID], z)
-				.resizeToFit(sf::Vector2f({iconSize, iconSize}))
-				.setPosition(sf::Vector2f({paddingX, paddingY + iconSize + 8.0f}));
-			
-			texts.add("hud.lives_text", fonts[fontID], z)
-				.setCharacterSize(22)
-				.setFillColor(sf::Color::White);
-			
-			texts.add("hud.points_text", fonts[fontID], z)
-				.setCharacterSize(22)
-				.setFillColor(sf::Color::White);
-			
-			texts.add("hud.gameover_text", fonts[fontID], z + 1.0)
-				.setCharacterSize(48)
-				.setFillColor(sf::Color::Red)
-				.setString("");
+			if (!built) {
+				sprites.add("hud.coin_icon", textures[coinTextureID], z)
+					.resizeToFit(sf::Vector2f({iconSize, iconSize}))
+					.setPosition(sf::Vector2f({paddingX, paddingY}));
+				
+				texts.add("hud.coin_text", fonts[fontID], z)
+					.setCharacterSize(22)
+					.setFillColor(sf::Color::White);
+				
+				sprites.add("hud.lives_icon", textures[livesTextureID], z)
+					.resizeToFit(sf::Vector2f({iconSize, iconSize}))
+					.setPosition(sf::Vector2f({paddingX, paddingY + iconSize + 8.0f}));
+				
+				texts.add("hud.lives_text", fonts[fontID], z)
+					.setCharacterSize(22)
+					.setFillColor(sf::Color::White);
+				
+				texts.add("hud.points_text", fonts[fontID], z)
+					.setCharacterSize(22)
+					.setFillColor(sf::Color::White);
+				
+				texts.add("hud.gameover_text", fonts[fontID], z + 1.0)
+					.setCharacterSize(48)
+					.setFillColor(sf::Color::Red)
+					.setString("");
+			}
 			
 			built = true;
+			return *this;
+		}
+		
+		HUD& unbuild() {
+			built = false;
 			return *this;
 		}
 		

@@ -123,6 +123,8 @@ using namespace std;
 //  -------------------------------------------------------------------------------------------------------
 #include "graphics/all.hpp"
 
+#include "gamedata.hpp"
+
 //  --- KEYBIND ---
 //  
 //  This contains a very simple struct of variable name = keybind to use for quick bind
@@ -148,6 +150,8 @@ using namespace std;
 #include "animation.hpp"
 
 #include "tile.hpp"
+
+#include "collectable.hpp"
 
 //  --- ENTITY ---
 //  
